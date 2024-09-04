@@ -36,18 +36,21 @@ export const register = async (username, email, password) => {
 };
 
 export const getSessions = async () => {
+  try {
+    const response = await api.get('/sessions');
+    return response.data;
+  } catch (error) {
+    throw error.response.data.msg || 'An error occurred while fetching sessions';
+  }
+};
+
+export const createSession = async (sessionData) => {
     try {
-      const response = await api.get('/sessions');
-      console.log('API response:', response);  // Debug log
-      return response.data;
-    } catch (error) {
-      console.error('Error in getSessions:', error);
-      throw error;
-    }
-  };
-  export const createSession = async (sessionData) => {
-    try {
-      const response = await api.post('/sessions', sessionData);
+      const response = await api.post('/sessions', {
+        buyIn: sessionData.buyIn,
+        startTime: sessionData.startTime,
+        // Add any other fields that are available at session start
+      });
       console.log('Create session response:', response.data);
       return response.data;
     } catch (error) {
@@ -55,6 +58,14 @@ export const getSessions = async () => {
       throw error;
     }
   };
-  export const updateSession = (id, sessionData) => api.put(`/sessions/${id}`, sessionData);
+
+export const updateSession = async (sessionId, sessionData) => {
+  try {
+    const response = await api.put(`/sessions/${sessionId}`, sessionData);
+    return response.data;
+  } catch (error) {
+    throw error.response.data.msg || 'An error occurred while updating the session';
+  }
+};
 
 export default api;

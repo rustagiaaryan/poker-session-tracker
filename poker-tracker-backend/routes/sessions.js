@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
 
 // Add new session
 router.post('/', auth, async (req, res) => {
-    const { buyIn, cashOut, duration, location, gameType, notes } = req.body;
+    const { buyIn, startTime } = req.body;
   
     try {
       console.log('Received session data:', req.body);
@@ -24,11 +24,8 @@ router.post('/', auth, async (req, res) => {
       const newSession = new Session({
         user: req.user.id,
         buyIn,
-        cashOut,
-        duration,
-        location,
-        gameType,
-        notes
+        startTime,
+        // cashOut and duration will use default values
       });
   
       console.log('Created new session object:', newSession);
@@ -45,29 +42,27 @@ router.post('/', auth, async (req, res) => {
 
 // Update a session
 router.put('/:id', auth, async (req, res) => {
-  const { buyIn, cashOut, duration, location, gameType, notes } = req.body;
-
-  try {
-    let session = await Session.findById(req.params.id);
-
-    if (!session) return res.status(404).json({ msg: 'Session not found' });
-
-    // Make sure user owns session
-    if (session.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    try {
+      let session = await Session.findById(req.params.id);
+  
+      if (!session) return res.status(404).json({ msg: 'Session not found' });
+  
+      // Make sure user owns session
+      if (session.user.toString() !== req.user.id) {
+        return res.status(401).json({ msg: 'Not authorized' });
+      }
+  
+      session = await Session.findByIdAndUpdate(
+        req.params.id,
+        { $set: req.body },
+        { new: true }
+      );
+  
+      res.json(session);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
     }
-
-    session = await Session.findByIdAndUpdate(
-      req.params.id,
-      { $set: { buyIn, cashOut, duration, location, gameType, notes } },
-      { new: true }
-    );
-
-    res.json(session);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+  });
 
 module.exports = router;

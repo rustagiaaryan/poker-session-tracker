@@ -16,11 +16,11 @@ const SessionSchema = new mongoose.Schema({
   },
   cashOut: {
     type: Number,
-    required: true
+    default: 0  // Set a default value
   },
   duration: {
     type: Number,
-    required: true
+    default: 0  // Set a default value
   },
   location: {
     type: String
