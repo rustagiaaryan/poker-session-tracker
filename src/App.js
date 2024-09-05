@@ -36,12 +36,9 @@ const App = () => {
       const newSession = { 
         buyIn: parseFloat(buyIn),
         startTime: new Date().toISOString(),
-        // Add any other fields that are available at session start
       };
       try {
-        console.log('Attempting to create session with:', newSession);
         const response = await createSession(newSession);
-        console.log('Session created:', response);
         setActiveSession(response);
         setScreen('activeSession');
         setBuyIn('');
@@ -54,10 +51,13 @@ const App = () => {
     }
   };
 
-  const handleUpdateSession = async (updatedSessionData) => {
+  const handleUpdateSession = async (sessionId, updatedSessionData) => {
     try {
-      const updatedSession = await updateSession(activeSession._id, updatedSessionData);
-      setActiveSession(updatedSession);
+      const updatedSession = await updateSession(sessionId, updatedSessionData);
+      if (activeSession && activeSession._id === sessionId) {
+        setActiveSession(updatedSession);
+      }
+      await fetchSessions();
     } catch (error) {
       console.error('Failed to update session', error);
       alert('Failed to update session. Please try again.');
@@ -69,16 +69,16 @@ const App = () => {
       await updateSession(activeSession._id, sessionData);
       setActiveSession(null);
       setScreen('home');
-      fetchSessions();
+      await fetchSessions();
     } catch (error) {
       console.error('Failed to end session', error);
       alert('Failed to end session. Please try again.');
     }
   };
+
   const handleDiscardSession = () => {
     setActiveSession(null);
     setScreen('home');
-    // You may want to add any additional cleanup here
   };
 
   const handleLogout = () => {
@@ -137,12 +137,16 @@ const App = () => {
               <ActiveSession
                 session={activeSession}
                 onEndSession={handleEndSession}
-                onUpdateSession={handleUpdateSession}
+                onUpdateSession={(updatedData) => handleUpdateSession(activeSession._id, updatedData)}
                 onDiscardSession={handleDiscardSession}
               />
             )}
             {screen === 'history' && (
-              <SessionHistory sessions={sessions} />
+              <SessionHistory 
+                sessions={sessions}
+                onUpdateSession={handleUpdateSession}
+                fetchSessions={fetchSessions}
+              />
             )}
           </>
         )}

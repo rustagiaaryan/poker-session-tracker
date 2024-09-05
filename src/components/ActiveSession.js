@@ -7,14 +7,13 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
   const [buyIns, setBuyIns] = useState([{ amount: session.buyIn, count: 1 }]);
   const [gameType, setGameType] = useState(session.gameType || 'Texas Hold\'em');
   const [stakes, setStakes] = useState(session.stakes || '');
-  const [setting, setSetting] = useState('In Person');
-  const [sessionType, setSessionType] = useState('Cash');
-  const [notes, setNotes] = useState('');
+  const [setting, setSetting] = useState(session.setting || 'In Person');
+  const [sessionType, setSessionType] = useState(session.sessionType || 'Cash');
+  const [notes, setNotes] = useState(session.notes || '');
   const [showCustomGameType, setShowCustomGameType] = useState(false);
   const [showCustomStakes, setShowCustomStakes] = useState(false);
   const [customGameType, setCustomGameType] = useState('');
   const [customStakes, setCustomStakes] = useState({ sb: '', bb: '', ante: '', straddle: '' });
-  const [photos, setPhotos] = useState([]);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [cashOut, setCashOut] = useState('');
 
@@ -50,14 +49,13 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
       setting,
       sessionType,
       notes,
-      duration: elapsedTime,
-      photos
+      duration: elapsedTime
     });
   };
 
   const handleFinishSession = () => {
     if (cashOut && !isNaN(cashOut)) {
-      const sessionData = {
+      onEndSession({
         buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
         cashOut: parseFloat(cashOut),
         duration: elapsedTime,
@@ -65,31 +63,18 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
         stakes,
         setting,
         sessionType,
-        notes,
-        photos
-      };
-      onEndSession(sessionData);
+        notes
+      });
       setShowFinishModal(false);
     } else {
       alert('Please enter a valid cash out amount');
     }
   };
 
-  const handlePhotoUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotos([...photos, reader.result]);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4">
-        <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => {/* Handle back navigation */}} />
+        <ChevronLeft className="text-purple-500 cursor-pointer" onClick={onDiscardSession} />
         <div className="text-2xl font-bold text-purple-500">{formatTime(elapsedTime)}</div>
         <button 
           className="bg-purple-500 text-white px-4 py-2 rounded"
@@ -101,7 +86,10 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
 
       <button 
         className="w-full bg-purple-500 text-white p-3 rounded flex items-center justify-center mb-4"
-        onClick={() => setIsRunning(!isRunning)}
+        onClick={() => {
+          setIsRunning(!isRunning);
+          handleUpdateSession();
+        }}
       >
         {isRunning ? <Pause className="mr-2" /> : <Play className="mr-2" />}
         {isRunning ? 'Pause Session' : 'Resume Session'}
@@ -119,46 +107,29 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
 
         <div className="bg-gray-800 p-3 rounded">
           <div className="flex items-center mb-2">
-            <Camera className="text-gray-400 mr-2" />
-            <span>Photos</span>
-          </div>
-          <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" id="photo-upload" />
-          <label htmlFor="photo-upload" className="cursor-pointer flex items-center justify-center border-2 border-dashed border-gray-600 p-4 rounded">
-            <Plus className="text-gray-400 mr-2" />
-            <span>Add Photo</span>
-          </label>
-          <div className="flex mt-2">
-            {photos.map((photo, index) => (
-              <img key={index} src={photo} alt={`Session photo ${index + 1}`} className="w-16 h-16 object-cover rounded mr-2" />
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-3 rounded">
-          <div className="flex items-center mb-2">
             <GamepadIcon className="text-gray-400 mr-2" />
             <span>Game Type</span>
           </div>
           <select 
-  className="w-full bg-gray-700 p-2 rounded text-white"
-  value={gameType}
-  onChange={(e) => {
-    if (e.target.value === 'Custom') {
-      setShowCustomGameType(true);
-    } else {
-      setGameType(e.target.value);
-    }
-  }}
->
-  <option>No Limit Hold'em</option>
-  <option>Pot Limit Hold'em</option>
-  <option>Omaha</option>
-  <option>DBBP Omaha</option>
-  <option value="Custom">Custom</option>
-  {!['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'].includes(gameType) && (
-    <option value={gameType}>{gameType}</option>
-  )}
-</select>
+            className="w-full bg-gray-700 p-2 rounded text-white"
+            value={gameType}
+            onChange={(e) => {
+              if (e.target.value === 'Custom') {
+                setShowCustomGameType(true);
+              } else {
+                setGameType(e.target.value);
+              }
+            }}
+          >
+            <option>No Limit Hold'em</option>
+            <option>Pot Limit Hold'em</option>
+            <option>Omaha</option>
+            <option>DBBP Omaha</option>
+            <option value="Custom">Custom</option>
+            {!['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'].includes(gameType) && (
+              <option value={gameType}>{gameType}</option>
+            )}
+          </select>
         </div>
 
         <div className="bg-gray-800 p-3 rounded">
@@ -167,30 +138,30 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
             <span>Stakes</span>
           </div>
           <select 
-  className="w-full bg-gray-700 p-2 rounded text-white"
-  value={stakes}
-  onChange={(e) => {
-    if (e.target.value === 'Custom') {
-      setShowCustomStakes(true);
-    } else {
-      setStakes(e.target.value);
-    }
-  }}
->
-  <option>0.10/0.20</option>
-  <option>0.25/0.50</option>
-  <option>0.5/1</option>
-  <option>1/2</option>
-  <option>2/3</option>
-  <option>5/10</option>
-  <option>10/20</option>
-  <option>25/50</option>
-  <option>100/200</option>
-  <option value="Custom">Custom</option>
-  {!['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'].includes(stakes) && (
-    <option value={stakes}>{stakes}</option>
-  )}
-</select>
+            className="w-full bg-gray-700 p-2 rounded text-white"
+            value={stakes}
+            onChange={(e) => {
+              if (e.target.value === 'Custom') {
+                setShowCustomStakes(true);
+              } else {
+                setStakes(e.target.value);
+              }
+            }}
+          >
+            <option>0.10/0.20</option>
+            <option>0.25/0.50</option>
+            <option>0.5/1</option>
+            <option>1/2</option>
+            <option>2/3</option>
+            <option>5/10</option>
+            <option>10/20</option>
+            <option>25/50</option>
+            <option>100/200</option>
+            <option value="Custom">Custom</option>
+            {!['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'].includes(stakes) && (
+              <option value={stakes}>{stakes}</option>
+            )}
+          </select>
         </div>
 
         <div className="bg-gray-800 p-3 rounded">

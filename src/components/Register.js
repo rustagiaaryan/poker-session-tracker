@@ -27,6 +27,7 @@ const Register = ({ onRegister }) => {
         onChange={(e) => setUsername(e.target.value)}
         placeholder="Username"
         className="w-full max-w-xs p-2 mb-4 bg-gray-800 text-white rounded"
+        required
       />
       <input
         type="email"
@@ -34,6 +35,7 @@ const Register = ({ onRegister }) => {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
         className="w-full max-w-xs p-2 mb-4 bg-gray-800 text-white rounded"
+        required
       />
       <input
         type="password"
@@ -41,6 +43,7 @@ const Register = ({ onRegister }) => {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"
         className="w-full max-w-xs p-2 mb-4 bg-gray-800 text-white rounded"
+        required
       />
       <button type="submit" className="w-full max-w-xs p-2 bg-purple-600 text-white rounded">
         Register

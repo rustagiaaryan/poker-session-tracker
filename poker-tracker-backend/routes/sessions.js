@@ -6,7 +6,7 @@ const Session = require('../models/Session');
 // Get all sessions for a user
 router.get('/', auth, async (req, res) => {
   try {
-    const sessions = await Session.find({ user: req.user.id }).sort({ date: -1 });
+    const sessions = await Session.find({ user: req.user.id }).sort({ startTime: -1 });
     res.json(sessions);
   } catch (err) {
     console.error(err.message);
@@ -14,9 +14,9 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Add new session
+// Create a new session
 router.post('/', auth, async (req, res) => {
-  const { buyIn, gameType, stakes, setting, sessionType, notes } = req.body;
+  const { buyIn, gameType, stakes, notes, setting, sessionType } = req.body;
 
   try {
     const newSession = new Session({
@@ -24,9 +24,10 @@ router.post('/', auth, async (req, res) => {
       buyIn,
       gameType,
       stakes,
+      notes,
       setting,
       sessionType,
-      notes
+      startTime: new Date()
     });
 
     const session = await newSession.save();
@@ -39,35 +40,35 @@ router.post('/', auth, async (req, res) => {
 
 // Update a session
 router.put('/:id', auth, async (req, res) => {
-  const { buyIn, cashOut, duration, gameType, stakes, setting, sessionType, notes, photos } = req.body;
+  const { buyIn, cashOut, duration, gameType, stakes, notes, isActive, setting, sessionType } = req.body;
 
   try {
     let session = await Session.findById(req.params.id);
 
-    if (!session) return res.status(404).json({ msg: 'Session not found' });
+    if (!session) {
+      return res.status(404).json({ msg: 'Session not found' });
+    }
 
     // Make sure user owns session
     if (session.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+      return res.status(401).json({ msg: 'User not authorized' });
     }
 
-    session = await Session.findByIdAndUpdate(
-      req.params.id,
-      { 
-        $set: { 
-          buyIn, 
-          cashOut, 
-          duration, 
-          gameType, 
-          stakes, 
-          setting, 
-          sessionType, 
-          notes,
-          photos
-        } 
-      },
-      { new: true }
-    );
+    session.buyIn = buyIn || session.buyIn;
+    session.cashOut = cashOut || session.cashOut;
+    session.duration = duration || session.duration;
+    session.gameType = gameType || session.gameType;
+    session.stakes = stakes || session.stakes;
+    session.notes = notes || session.notes;
+    session.isActive = isActive !== undefined ? isActive : session.isActive;
+    session.setting = setting || session.setting;
+    session.sessionType = sessionType || session.sessionType;
+
+    if (!session.isActive && !session.endTime) {
+      session.endTime = new Date();
+    }
+
+    await session.save();
 
     res.json(session);
   } catch (err) {
@@ -76,21 +77,40 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete a session
-router.delete('/:id', auth, async (req, res) => {
+// Get filtered and sorted sessions
+router.get('/filter', auth, async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    let query = { user: req.user.id };
+    const { profitMin, profitMax, setting, gameType, stakes, sessionType, sortBy, sortOrder } = req.query;
 
-    if (!session) return res.status(404).json({ msg: 'Session not found' });
-
-    // Make sure user owns session
-    if (session.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    if (profitMin || profitMax) {
+      query.$expr = { $and: [] };
+      if (profitMin) {
+        query.$expr.$and.push({ $gte: [{ $subtract: ['$cashOut', '$buyIn'] }, Number(profitMin)] });
+      }
+      if (profitMax) {
+        query.$expr.$and.push({ $lte: [{ $subtract: ['$cashOut', '$buyIn'] }, Number(profitMax)] });
+      }
     }
 
-    await session.remove();
+    if (setting) query.setting = setting;
+    if (gameType) query.gameType = gameType;
+    if (stakes) query.stakes = stakes;
+    if (sessionType) query.sessionType = sessionType;
 
-    res.json({ msg: 'Session removed' });
+    let sortOption = {};
+    if (sortBy === 'profit') {
+      sortOption = { $subtract: ['$cashOut', '$buyIn'] };
+    } else if (sortBy === 'duration') {
+      sortOption = 'duration';
+    } else {
+      sortOption = 'startTime';
+    }
+
+    const sessions = await Session.find(query)
+      .sort({ [sortOption]: sortOrder === 'asc' ? 1 : -1 });
+
+    res.json(sessions);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -22,7 +22,7 @@ export const login = async (email, password) => {
     const response = await api.post('/users/login', { email, password });
     return response.data;
   } catch (error) {
-    throw error.response.data.msg || 'An error occurred during login';
+    throw error.response?.data?.msg || 'An error occurred during login';
   }
 };
 
@@ -31,7 +31,7 @@ export const register = async (username, email, password) => {
     const response = await api.post('/users/register', { username, email, password });
     return response.data;
   } catch (error) {
-    throw error.response.data.msg || 'An error occurred during registration';
+    throw error.response?.data?.msg || 'An error occurred during registration';
   }
 };
 
@@ -40,32 +40,35 @@ export const getSessions = async () => {
     const response = await api.get('/sessions');
     return response.data;
   } catch (error) {
-    throw error.response.data.msg || 'An error occurred while fetching sessions';
+    throw error.response?.data?.msg || 'An error occurred while fetching sessions';
   }
 };
 
 export const createSession = async (sessionData) => {
-    try {
-      const response = await api.post('/sessions', {
-        buyIn: sessionData.buyIn,
-        startTime: sessionData.startTime,
-        // Add any other fields that are available at session start
-      });
-      console.log('Create session response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error in createSession:', error.response?.data || error.message);
-      throw error;
-    }
-  };
+  try {
+    const response = await api.post('/sessions', sessionData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while creating the session';
+  }
+};
 
 export const updateSession = async (sessionId, sessionData) => {
   try {
     const response = await api.put(`/sessions/${sessionId}`, sessionData);
     return response.data;
   } catch (error) {
-    throw error.response.data.msg || 'An error occurred while updating the session';
+    throw error.response?.data?.msg || 'An error occurred while updating the session';
   }
 };
+
+export const getFilteredSessions = async (filters) => {
+    try {
+      const response = await api.get('/sessions/filter', { params: filters });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.msg || 'An error occurred while fetching filtered sessions';
+    }
+  };
 
 export default api;
