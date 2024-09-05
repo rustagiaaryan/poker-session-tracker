@@ -63,12 +63,12 @@ export const updateSession = async (sessionId, sessionData) => {
 };
 
 export const getFilteredSessions = async (filters) => {
-    try {
-      const response = await api.get('/sessions/filter', { params: filters });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data?.msg || 'An error occurred while fetching filtered sessions';
-    }
-  };
+  try {
+    const response = await api.get('/sessions/filter', { params: filters });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while fetching filtered sessions';
+  }
+};
 
 export default api;

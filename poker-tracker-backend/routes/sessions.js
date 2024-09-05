@@ -16,18 +16,22 @@ router.get('/', auth, async (req, res) => {
 
 // Create a new session
 router.post('/', auth, async (req, res) => {
-  const { buyIn, gameType, stakes, notes, setting, sessionType } = req.body;
+  const { buyIn, cashOut, gameType, stakes, notes, setting, sessionType, startTime, endTime, duration, isActive } = req.body;
 
   try {
     const newSession = new Session({
       user: req.user.id,
       buyIn,
+      cashOut,
       gameType,
       stakes,
       notes,
       setting,
       sessionType,
-      startTime: new Date()
+      startTime,
+      endTime,
+      duration,
+      isActive
     });
 
     const session = await newSession.save();
@@ -40,7 +44,7 @@ router.post('/', auth, async (req, res) => {
 
 // Update a session
 router.put('/:id', auth, async (req, res) => {
-  const { buyIn, cashOut, duration, gameType, stakes, notes, isActive, setting, sessionType } = req.body;
+  const { buyIn, cashOut, duration, gameType, stakes, notes, isActive, setting, sessionType, startTime, endTime } = req.body;
 
   try {
     let session = await Session.findById(req.params.id);
@@ -63,10 +67,8 @@ router.put('/:id', auth, async (req, res) => {
     session.isActive = isActive !== undefined ? isActive : session.isActive;
     session.setting = setting || session.setting;
     session.sessionType = sessionType || session.sessionType;
-
-    if (!session.isActive && !session.endTime) {
-      session.endTime = new Date();
-    }
+    session.startTime = startTime || session.startTime;
+    session.endTime = endTime || session.endTime;
 
     await session.save();
 

@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import SessionHistory from './components/SessionHistory';
 import ActiveSession from './components/ActiveSession';
+import AddCompletedSession from './components/AddCompletedSession';  // Make sure this path is correct
 
 const App = () => {
   const [screen, setScreen] = useState('home');
@@ -89,6 +90,17 @@ const App = () => {
     setSessions([]);
   };
 
+  const handleAddCompletedSession = async (sessionData) => {
+    try {
+      const newSession = await createSession(sessionData);
+      setSessions(prevSessions => [...prevSessions, newSession]);
+      setScreen('home');
+    } catch (error) {
+      console.error('Failed to add completed session', error);
+      alert('Failed to add completed session. Please try again.');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       <header className="flex justify-between items-center p-4">
@@ -124,6 +136,12 @@ const App = () => {
                 </button>
                 <button 
                   className="w-full max-w-xs p-3 mb-4 bg-purple-600 text-white rounded-lg text-xl"
+                  onClick={() => setScreen('addCompleted')}
+                >
+                  Add Completed Session
+                </button>
+                <button 
+                  className="w-full max-w-xs p-3 mb-4 bg-purple-600 text-white rounded-lg text-xl"
                   onClick={() => setScreen('history')}
                 >
                   View Session History
@@ -146,6 +164,12 @@ const App = () => {
                 sessions={sessions}
                 onUpdateSession={handleUpdateSession}
                 fetchSessions={fetchSessions}
+              />
+            )}
+            {screen === 'addCompleted' && (
+              <AddCompletedSession
+                onBack={() => setScreen('home')}
+                onSessionAdded={handleAddCompletedSession}
               />
             )}
           </>
