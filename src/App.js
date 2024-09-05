@@ -64,14 +64,9 @@ const App = () => {
     }
   };
 
-  const handleEndSession = async (cashOut) => {
+  const handleEndSession = async (sessionData) => {
     try {
-      const endedSession = {
-        ...activeSession,
-        cashOut: parseFloat(cashOut),
-        endTime: new Date().toISOString(),
-      };
-      await updateSession(activeSession._id, endedSession);
+      await updateSession(activeSession._id, sessionData);
       setActiveSession(null);
       setScreen('home');
       fetchSessions();
@@ -79,6 +74,11 @@ const App = () => {
       console.error('Failed to end session', error);
       alert('Failed to end session. Please try again.');
     }
+  };
+  const handleDiscardSession = () => {
+    setActiveSession(null);
+    setScreen('home');
+    // You may want to add any additional cleanup here
   };
 
   const handleLogout = () => {
@@ -138,6 +138,7 @@ const App = () => {
                 session={activeSession}
                 onEndSession={handleEndSession}
                 onUpdateSession={handleUpdateSession}
+                onDiscardSession={handleDiscardSession}
               />
             )}
             {screen === 'history' && (

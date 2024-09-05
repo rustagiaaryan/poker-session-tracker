@@ -16,21 +16,37 @@ const SessionSchema = new mongoose.Schema({
   },
   cashOut: {
     type: Number,
-    default: 0  // Set a default value
+    default: 0
   },
   duration: {
     type: Number,
-    default: 0  // Set a default value
-  },
-  location: {
-    type: String
+    default: 0
   },
   gameType: {
-    type: String
+    type: String,
+    default: 'Texas Hold\'em'
+  },
+  stakes: {
+    type: String,
+    default: ''
+  },
+  setting: {
+    type: String,
+    enum: ['In Person', 'Online'],
+    default: 'In Person'
+  },
+  sessionType: {
+    type: String,
+    enum: ['Cash', 'Tournament'],
+    default: 'Cash'
   },
   notes: {
+    type: String,
+    default: ''
+  },
+  photos: [{
     type: String
-  }
+  }]
 });
 
 SessionSchema.virtual('profit').get(function() {
@@ -38,7 +54,8 @@ SessionSchema.virtual('profit').get(function() {
 });
 
 SessionSchema.virtual('profitPerHour').get(function() {
-  return (this.cashOut - this.buyIn) / (this.duration / 60);
+  const hours = this.duration / 60;
+  return hours > 0 ? this.profit / hours : 0;
 });
 
 SessionSchema.set('toJSON', { virtuals: true });
