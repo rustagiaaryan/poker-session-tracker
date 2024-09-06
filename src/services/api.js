@@ -35,12 +35,21 @@ export const register = async (username, email, password) => {
   }
 };
 
-export const getSessions = async () => {
+export const getSessions = async (endpoint = '') => {
   try {
-    const response = await api.get('/sessions');
+    const response = await api.get(`/sessions${endpoint}`);
     return response.data;
   } catch (error) {
     throw error.response?.data?.msg || 'An error occurred while fetching sessions';
+  }
+};
+
+export const getSession = async (sessionId) => {
+  try {
+    const response = await api.get(`/sessions/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while fetching the session';
   }
 };
 
@@ -62,6 +71,15 @@ export const updateSession = async (sessionId, sessionData) => {
   }
 };
 
+export const deleteSession = async (sessionId) => {
+  try {
+    const response = await api.delete(`/sessions/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while deleting the session';
+  }
+};
+
 export const getFilteredSessions = async (filters) => {
   try {
     const response = await api.get('/sessions/filter', { params: filters });
@@ -70,24 +88,5 @@ export const getFilteredSessions = async (filters) => {
     throw error.response?.data?.msg || 'An error occurred while fetching filtered sessions';
   }
 };
-
-export const deleteSession = async (sessionId) => {
-    try {
-      const response = await api.delete(`/sessions/${sessionId}`);
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        throw new Error(error.response.data.msg || 'An error occurred while deleting the session');
-      } else if (error.request) {
-        // The request was made but no response was received
-        throw new Error('No response received from server');
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        throw new Error('Error setting up the request');
-      }
-    }
-  };
 
 export default api;

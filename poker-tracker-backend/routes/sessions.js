@@ -15,6 +15,37 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get all active sessions for a user
+router.get('/active', auth, async (req, res) => {
+  try {
+    const activeSessions = await Session.find({ user: req.user.id, isActive: true }).sort({ startTime: -1 });
+    res.json(activeSessions);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Get a single session by ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ msg: 'Session not found' });
+    }
+    if (session.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'User not authorized' });
+    }
+    res.json(session);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Session not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
 // Create a new session
 router.post('/', auth, async (req, res) => {
   const { buyIn, cashOut, gameType, stakes, notes, setting, sessionType, startTime, endTime, duration, isActive } = req.body;
@@ -80,77 +111,37 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Get filtered and sorted sessions
-router.get('/filter', auth, async (req, res) => {
+// Delete a session
+router.delete('/:id', auth, async (req, res) => {
   try {
-    let query = { user: req.user.id };
-    const { profitMin, profitMax, setting, gameType, stakes, sessionType, sortBy, sortOrder } = req.query;
+    const { id } = req.params;
 
-    if (profitMin || profitMax) {
-      query.$expr = { $and: [] };
-      if (profitMin) {
-        query.$expr.$and.push({ $gte: [{ $subtract: ['$cashOut', '$buyIn'] }, Number(profitMin)] });
-      }
-      if (profitMax) {
-        query.$expr.$and.push({ $lte: [{ $subtract: ['$cashOut', '$buyIn'] }, Number(profitMax)] });
-      }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: 'Invalid session ID' });
     }
 
-    if (setting) query.setting = setting;
-    if (gameType) query.gameType = gameType;
-    if (stakes) query.stakes = stakes;
-    if (sessionType) query.sessionType = sessionType;
+    let session = await Session.findById(id);
 
-    let sortOption = {};
-    if (sortBy === 'profit') {
-      sortOption = { $subtract: ['$cashOut', '$buyIn'] };
-    } else if (sortBy === 'duration') {
-      sortOption = 'duration';
-    } else {
-      sortOption = 'startTime';
+    if (!session) {
+      return res.status(404).json({ msg: 'Session not found' });
     }
 
-    const sessions = await Session.find(query)
-      .sort({ [sortOption]: sortOrder === 'asc' ? 1 : -1 });
+    // Make sure user owns session
+    if (session.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: 'User not authorized' });
+    }
 
-    res.json(sessions);
+    const result = await Session.findByIdAndDelete(id);
+
+    if (!result) {
+      return res.status(500).json({ msg: 'Failed to delete session' });
+    }
+
+    res.json({ msg: 'Session removed' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error in delete session route:', err);
+    res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });
-
-router.delete('/:id', auth, async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      // Check if the id is a valid ObjectId
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ msg: 'Invalid session ID' });
-      }
-  
-      let session = await Session.findById(id);
-  
-      if (!session) {
-        return res.status(404).json({ msg: 'Session not found' });
-      }
-  
-      // Make sure user owns session
-      if (session.user.toString() !== req.user.id) {
-        return res.status(401).json({ msg: 'User not authorized' });
-      }
-  
-      const result = await Session.findByIdAndDelete(id);
-  
-      if (!result) {
-        return res.status(500).json({ msg: 'Failed to delete session' });
-      }
-  
-      res.json({ msg: 'Session removed' });
-    } catch (err) {
-      console.error('Error in delete session route:', err);
-      res.status(500).json({ msg: 'Server Error', error: err.message });
-    }
-  });
 
 module.exports = router;
