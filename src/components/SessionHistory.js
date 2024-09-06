@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, isValid, parseISO } from 'date-fns';
+import { format, isValid, parseISO, isWithinInterval, endOfDay } from 'date-fns';
 import { Edit, Save, X, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Filter, ChevronLeft } from 'lucide-react';
 
 const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
@@ -17,7 +17,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     setting: '',
     gameType: '',
     stakes: '',
-    sessionType: ''
+    sessionType: '',
+    startDate: '',
+    endDate: ''
   });
   const [sortBy, setSortBy] = useState('startTime');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -80,7 +82,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
   const calculateProfitPerHour = (session) => {
     const profit = session.cashOut - session.buyIn;
-    const hours = session.duration / 60; // Convert minutes to hours
+    const hours = session.duration / 60;
     return hours > 0 ? (profit / hours).toFixed(2) : '0.00';
   };
 
@@ -103,7 +105,6 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const applyFiltersAndSort = () => {
     let filtered = [...sessions];
 
-    // Apply filters
     if (filters.profitMin !== '') {
       filtered = filtered.filter(session => (session.cashOut - session.buyIn) >= parseFloat(filters.profitMin));
     }
@@ -122,8 +123,14 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     if (filters.sessionType !== '') {
       filtered = filtered.filter(session => session.sessionType === filters.sessionType);
     }
+    if (filters.startDate && filters.endDate) {
+      const start = parseISO(filters.startDate);
+      const end = endOfDay(parseISO(filters.endDate));
+      filtered = filtered.filter(session => 
+        isWithinInterval(parseISO(session.startTime), { start, end })
+      );
+    }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       if (sortBy === 'date') {
         return sortOrder === 'asc' ? new Date(a.startTime) - new Date(b.startTime) : new Date(b.startTime) - new Date(a.startTime);
@@ -133,6 +140,10 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
         return sortOrder === 'asc' ? profitA - profitB : profitB - profitA;
       } else if (sortBy === 'duration') {
         return sortOrder === 'asc' ? a.duration - b.duration : b.duration - a.duration;
+      } else if (sortBy === 'profitPerHour') {
+        const profitPerHourA = a.duration > 0 ? ((a.cashOut - a.buyIn) / a.duration) * 60 : 0;
+        const profitPerHourB = b.duration > 0 ? ((b.cashOut - b.buyIn) / b.duration) * 60 : 0;
+        return sortOrder === 'asc' ? profitPerHourA - profitPerHourB : profitPerHourB - profitPerHourA;
       }
       return 0;
     });
@@ -147,7 +158,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       setting: '',
       gameType: '',
       stakes: '',
-      sessionType: ''
+      sessionType: '',
+      startDate: '',
+      endDate: ''
     });
     setSortBy('date');
     setSortOrder('desc');
@@ -181,25 +194,43 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Profit Range</label>
-                <input
-                  type="number"
-                  name="profitMin"
-                  value={filters.profitMin}
-                  onChange={handleFilterChange}
-                  placeholder="Min"
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                />
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    name="profitMin"
+                    value={filters.profitMin}
+                    onChange={handleFilterChange}
+                    placeholder="Min"
+                    className="w-full p-2 bg-gray-700 text-white rounded"
+                  />
+                  <input
+                    type="number"
+                    name="profitMax"
+                    value={filters.profitMax}
+                    onChange={handleFilterChange}
+                    placeholder="Max"
+                    className="w-full p-2 bg-gray-700 text-white rounded"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">&nbsp;</label>
-                <input
-                  type="number"
-                  name="profitMax"
-                  value={filters.profitMax}
-                  onChange={handleFilterChange}
-                  placeholder="Max"
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                />
+                <label className="block text-sm font-medium text-gray-400 mb-1">Date Range</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={filters.startDate}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 bg-gray-700 text-white rounded"
+                  />
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={filters.endDate}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 bg-gray-700 text-white rounded"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Setting</label>
@@ -260,26 +291,29 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 </select>
               </div>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="p-2 bg-gray-700 text-white rounded mr-2"
-                >
-                  <option value="date">Date</option>
-                  <option value="profit">Profit</option>
-                  <option value="duration">Duration</option>
-                </select>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className="p-2 bg-gray-700 text-white rounded"
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
+                <div className="flex space-x-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="p-2 bg-gray-700 text-white rounded"
+                  >
+                    <option value="date">Date</option>
+                    <option value="profit">Profit</option>
+                    <option value="duration">Duration</option>
+                    <option value="profitPerHour">Profit/Hour</option>
+                  </select>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="p-2 bg-gray-700 text-white rounded"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <button
@@ -328,7 +362,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
           <div key={session._id} className="bg-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-lg font-semibold">
-                {isValid(parseISO(session.startTime)) 
+              {isValid(parseISO(session.startTime)) 
                   ? format(parseISO(session.startTime), 'MMM dd, yyyy')
                   : 'Invalid Date'}
               </span>
@@ -345,7 +379,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <DollarSign size={16} className="mr-1" />
                   <span>Profit</span>
                 </div>
-                <span className="text-xl font-bold">${(session.cashOut - session.buyIn).toFixed(2)}</span>
+                <span className={`text-xl font-bold ${(session.cashOut - session.buyIn) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  ${(session.cashOut - session.buyIn).toFixed(2)}
+                </span>
               </div>
               <div>
                 <div className="flex items-center text-gray-400 mb-1">

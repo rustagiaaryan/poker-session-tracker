@@ -4,7 +4,7 @@ import { ChevronLeft, Pause, Play, Plus, Camera, GamepadIcon, DollarSign, Monito
 
 const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSession }) => {
   const navigate = useNavigate();
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [buyIns, setBuyIns] = useState([{ amount: session.buyIn, count: 1 }]);
   const [gameType, setGameType] = useState(session.gameType || 'No Limit Hold\'em');
@@ -23,7 +23,8 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
     let interval;
     if (isRunning) {
       interval = setInterval(() => {
-        setElapsedTime((prevTime) => prevTime + 1);}, 1000);
+        setElapsedSeconds((prevSeconds) => prevSeconds + 1);
+      }, 1000);
     }
     return () => clearInterval(interval);
   }, [isRunning]);
@@ -31,8 +32,12 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const roundUpToNearestMinute = (seconds) => {
+    return Math.ceil(seconds / 60);
   };
 
   const handleAddBuyIn = () => {
@@ -50,7 +55,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
       setting,
       sessionType,
       notes,
-      duration: elapsedTime
+      duration: elapsedSeconds
     });
   };
 
@@ -59,7 +64,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
       await onEndSession({
         buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
         cashOut: parseFloat(cashOut),
-        duration: elapsedTime,
+        duration: roundUpToNearestMinute(elapsedSeconds),
         gameType,
         stakes,
         setting,
@@ -76,7 +81,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
     <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <ChevronLeft className="text-purple-500 cursor-pointer" onClick={onDiscardSession} />
-        <div className="text-2xl font-bold text-purple-500">{formatTime(elapsedTime)}</div>
+        <div className="text-2xl font-bold text-purple-500">{formatTime(elapsedSeconds)}</div>
         <button 
           className="bg-purple-500 text-white px-4 py-2 rounded"
           onClick={() => setShowFinishModal(true)}
@@ -293,7 +298,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-gray-800 p-4 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4 text-purple-500">Finish Session</h3>
-            <p className="text-center text-4xl font-bold text-purple-500 mb-4">{formatTime(elapsedTime)}</p>
+            <p className="text-center text-4xl font-bold text-purple-500 mb-4">{formatTime(elapsedSeconds)}</p>
             <input
               type="number"
               className="w-full p-2 mb-4 bg-gray-700 text-white rounded"
