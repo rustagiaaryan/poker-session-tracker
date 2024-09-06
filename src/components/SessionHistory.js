@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isValid, parseISO, isWithinInterval, endOfDay } from 'date-fns';
-import { Edit, Save, X, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Filter, ChevronLeft } from 'lucide-react';
+import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy } from 'lucide-react';
+import SessionDetailsModal from './SessionDetailsModal'; // Make sure this path is correct
 
 const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const navigate = useNavigate();
   const [graphData, setGraphData] = useState([]);
-  const [editingSession, setEditingSession] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(null);
   const [error, setError] = useState(null);
   const [overallProfit, setOverallProfit] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
@@ -65,25 +66,6 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const calculateOverallProfit = (sessionData) => {
     const totalProfit = sessionData.reduce((sum, session) => sum + (session.cashOut - session.buyIn), 0);
     setOverallProfit(totalProfit);
-  };
-
-  const handleEdit = (session) => {
-    setEditingSession({ ...session });
-  };
-
-  const handleSave = async () => {
-    try {
-      await onUpdateSession(editingSession._id, editingSession);
-      setEditingSession(null);
-      fetchSessions();
-    } catch (error) {
-      console.error('Failed to update session', error);
-      setError('Failed to update session. Please try again.');
-    }
-  };
-
-  const handleChange = (e) => {
-    setEditingSession({ ...editingSession, [e.target.name]: e.target.value });
   };
 
   const formatDuration = (minutes) => {
@@ -382,19 +364,17 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
       <div className="space-y-4">
         {filteredSessions.map((session) => (
-          <div key={session._id} className="bg-gray-800 rounded-lg p-4">
+          <div 
+            key={session._id} 
+            className="bg-gray-800 rounded-lg p-4 cursor-pointer transform transition duration-200 hover:scale-1 hover:shadow-lg hover:bg-gray-700"
+            onClick={() => setSelectedSession(session)}
+          >
             <div className="flex justify-between items-center mb-2">
               <span className="text-lg font-semibold">
                 {isValid(parseISO(session.startTime)) 
                   ? format(parseISO(session.startTime), 'MMM dd, yyyy')
                   : 'Invalid Date'}
               </span>
-              <button
-                onClick={() => handleEdit(session)}
-                className="text-purple-500 hover:text-purple-400"
-              >
-                <Edit size={18} />
-              </button>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -439,168 +419,12 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
         ))}
       </div>
       
-      {editingSession && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto">
-          <div className="bg-gray-800 p-4 rounded-lg w-full max-w-2xl m-4">
-            <h3 className="text-xl font-bold mb-4 text-purple-500">Edit Session</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <DollarSign size={14} className="inline mr-1" />
-                  Buy In
-                </label>
-                <input
-                  type="number"
-                  name="buyIn"
-                  value={editingSession.buyIn}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <DollarSign size={14} className="inline mr-1" />
-                  Cash Out
-                </label>
-                <input
-                  type="number"
-                  name="cashOut"
-                  value={editingSession.cashOut}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <Clock size={14} className="inline mr-1" />
-                  Duration (minutes)
-                </label>
-                <input
-                  type="number"
-                  name="duration"
-                  value={editingSession.duration}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <GamepadIcon size={14} className="inline mr-1" />
-                  Game Type
-                </label>
-                <select
-                  name="gameType"
-                  value={editingSession.gameType}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                >
-                  <option>No Limit Hold'em</option>
-                  <option>Pot Limit Hold'em</option>
-                  <option>Omaha</option>
-                  <option>DBBP Omaha</option>
-                  <option value="Custom">Custom</option>
-                </select>
-                {editingSession.gameType === 'Custom' && (
-                  <input
-                    type="text"
-                    name="customGameType"
-                    value={editingSession.customGameType || ''}
-                    onChange={handleChange}
-                    className="w-full mt-2 p-2 bg-gray-700 text-white rounded"
-                    placeholder="Enter custom game type"
-                  />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <DollarSign size={14} className="inline mr-1" />
-                  Stakes
-                </label>
-                <select
-                  name="stakes"
-                  value={editingSession.stakes}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                >
-                  <option>0.10/0.20</option>
-                  <option>0.25/0.50</option>
-                  <option>0.5/1</option>
-                  <option>1/2</option>
-                  <option>2/3</option>
-                  <option>5/10</option>
-                  <option>10/20</option>
-                  <option>25/50</option>
-                  <option>100/200</option>
-                  <option value="Custom">Custom</option>
-                </select>
-                {editingSession.stakes === 'Custom' && (
-                  <input
-                    type="text"
-                    name="customStakes"
-                    value={editingSession.customStakes || ''}
-                    onChange={handleChange}
-                    className="w-full mt-2 p-2 bg-gray-700 text-white rounded"
-                    placeholder="Enter custom stakes"
-                  />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <Monitor size={14} className="inline mr-1" />
-                  Setting
-                </label>
-                <select
-                  name="setting"
-                  value={editingSession.setting}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                >
-                  <option>In Person</option>
-                  <option>Online</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">
-                  <Trophy size={14} className="inline mr-1" />
-                  Session Type
-                </label>
-                <select
-                  name="sessionType"
-                  value={editingSession.sessionType}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                >
-                  <option>Cash</option>
-                  <option>Tournament</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400">Notes</label>
-                <textarea
-                  name="notes"
-                  value={editingSession.notes}
-                  onChange={handleChange}
-                  className="w-full p-2 bg-gray-700 text-white rounded"
-                  rows="3"
-                ></textarea>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setEditingSession(null)}
-                className="px-4 py-2 bg-gray-600 text-white rounded mr-2"
-              >
-                <X size={18} className="inline mr-1" /> Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-purple-600 text-white rounded"
-              >
-                <Save size={18} className="inline mr-1" /> Save
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedSession && (
+        <SessionDetailsModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
+          onUpdate={onUpdateSession}
+        />
       )}
     </div>
   );
