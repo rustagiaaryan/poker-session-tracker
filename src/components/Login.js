@@ -13,8 +13,8 @@ const Login = ({ onLogin }) => {
     try {
       const data = await login(email, password);
       localStorage.setItem('token', data.token);
-      onLogin();
-      navigate('/');
+      onLogin(); // Call the onLogin function passed from App.js
+      navigate('/'); // Navigate to home page after successful login
     } catch (error) {
       setError(error.toString());
     }
@@ -61,16 +61,13 @@ const Login = ({ onLogin }) => {
           >
             Sign In
           </button>
-          <a
+          <button
             className="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800"
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/register');
-            }}
+            onClick={() => navigate('/register')}
+            type="button"
           >
             Register
-          </a>
+          </button>
         </div>
       </form>
     </div>

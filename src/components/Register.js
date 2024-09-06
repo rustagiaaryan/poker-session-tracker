@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../services/api';
 
-const Register = ({ onRegister }) => {
+const Register = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,8 +14,8 @@ const Register = ({ onRegister }) => {
     try {
       const data = await register(username, email, password);
       localStorage.setItem('token', data.token);
-      onRegister();
-      navigate('/');
+      onLogin(); // Call the onLogin function passed from App.js
+      navigate('/'); // Navigate to home page after successful registration
     } catch (error) {
       setError(error.toString());
     }
@@ -76,16 +76,13 @@ const Register = ({ onRegister }) => {
           >
             Register
           </button>
-          <a
+          <button
             className="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800"
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/login');
-            }}
+            onClick={() => navigate('/login')}
+            type="button"
           >
             Login
-          </a>
+          </button>
         </div>
       </form>
     </div>
