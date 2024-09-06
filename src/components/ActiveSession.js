@@ -16,7 +16,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
   const [showCustomGameType, setShowCustomGameType] = useState(false);
   const [showCustomStakes, setShowCustomStakes] = useState(false);
   const [customGameType, setCustomGameType] = useState('');
-  const [customStakes, setCustomStakes] = useState({ sb: '', bb: '', ante: '', straddle: '' });
+  const [customStakes, setCustomStakes] = useState('');
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [cashOut, setCashOut] = useState('');
 
@@ -91,7 +91,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-2xl mx-auto">
+    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-3xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <ChevronLeft className="text-purple-500 cursor-pointer" onClick={handleDiscard} />
         <div className="text-3xl font-bold text-purple-500">{formatTime(elapsedSeconds)}</div>
@@ -127,57 +127,61 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
         </div>
 
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-          <div className="flex items-center mb-2">
-            <GamepadIcon className="text-purple-500 mr-2" />
-            <span className="text-lg font-semibold">Game Type</span>
-          </div>
-          <select 
-            className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={gameType}
-            onChange={(e) => {
-              if (e.target.value === 'Custom') {
-                setShowCustomGameType(true);
-              } else {
-                setGameType(e.target.value);
-              }
-            }}
-          >
-            <option>No Limit Hold'em</option>
-            <option>Pot Limit Hold'em</option>
-            <option>Omaha</option>
-            <option>DBBP Omaha</option>
-            <option value="Custom">Custom</option>
-          </select>
+        <div className="flex items-center mb-2">
+          <GamepadIcon className="text-purple-500 mr-2" />
+          <span className="text-lg font-semibold">Game Type</span>
         </div>
+        <select 
+          className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+          value={gameType}
+          onChange={(e) => {
+            if (e.target.value === 'Custom') {
+              setShowCustomGameType(true);
+            } else {
+              setGameType(e.target.value);
+              setCustomGameType('');
+            }
+          }}
+        >
+          <option>No Limit Hold'em</option>
+          <option>Pot Limit Hold'em</option>
+          <option>Omaha</option>
+          <option>DBBP Omaha</option>
+          {customGameType && <option value={customGameType}>{customGameType}</option>}
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
 
-        <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-          <div className="flex items-center mb-2">
-            <DollarSign className="text-purple-500 mr-2" />
-            <span className="text-lg font-semibold">Stakes</span>
-          </div>
-          <select 
-            className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={stakes}
-            onChange={(e) => {
-              if (e.target.value === 'Custom') {
-                setShowCustomStakes(true);
-              } else {
-                setStakes(e.target.value);
-              }
-            }}
-          >
-            <option>0.10/0.20</option>
-            <option>0.25/0.50</option>
-            <option>0.5/1</option>
-            <option>1/2</option>
-            <option>2/3</option>
-            <option>5/10</option>
-            <option>10/20</option>
-            <option>25/50</option>
-            <option>100/200</option>
-            <option value="Custom">Custom</option>
-          </select>
+      <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+        <div className="flex items-center mb-2">
+          <DollarSign className="text-purple-500 mr-2" />
+          <span className="text-lg font-semibold">Stakes</span>
         </div>
+        <select 
+          className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+          value={stakes}
+          onChange={(e) => {
+            if (e.target.value === 'Custom') {
+              setShowCustomStakes(true);
+            } else {
+              setStakes(e.target.value);
+              setCustomStakes('');
+            }
+          }}
+        >
+          <option>0.10/0.20</option>
+          <option>0.25/0.50</option>
+          <option>0.5/1</option>
+          <option>1/2</option>
+          <option>2/3</option>
+          <option>5/10</option>
+          <option>10/20</option>
+          <option>25/50</option>
+          <option>100/200</option>
+          {customStakes && <option value={customStakes}>{customStakes}</option>}
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
 
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <div className="flex items-center mb-2">
@@ -262,31 +266,10 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
             <h3 className="text-xl font-bold mb-4 text-purple-500">Custom Stakes</h3>
             <input
               type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={customStakes.sb}
-              onChange={(e) => setCustomStakes({...customStakes, sb: e.target.value})}
-              placeholder="Small Blind"
-            />
-            <input
-              type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={customStakes.bb}
-              onChange={(e) => setCustomStakes({...customStakes, bb: e.target.value})}
-              placeholder="Big Blind"
-            />
-            <input
-              type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={customStakes.ante}
-              onChange={(e) => setCustomStakes({...customStakes, ante: e.target.value})}
-              placeholder="Ante (optional)"
-            />
-            <input
-              type="text"
               className="w-full p-2 mb-4 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={customStakes.straddle}
-              onChange={(e) => setCustomStakes({...customStakes, straddle: e.target.value})}
-              placeholder="Straddle (optional)"
+              value={customStakes}
+              onChange={(e) => setCustomStakes(e.target.value)}
+              placeholder="Enter custom stakes (e.g., 1/2/5)"
             />
             <div className="flex justify-end">
               <button
@@ -298,7 +281,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
               <button
                 className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300"
                 onClick={() => {
-                  setStakes(`${customStakes.sb}/${customStakes.bb}${customStakes.ante ? ` (Ante: ${customStakes.ante})` : ''}${customStakes.straddle ? ` (Straddle: ${customStakes.straddle})` : ''}`);
+                  setStakes(customStakes);
                   setShowCustomStakes(false);
                 }}
               >

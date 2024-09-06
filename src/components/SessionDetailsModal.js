@@ -5,10 +5,14 @@ import { X, Edit, Save, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Tro
 const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSession, setEditedSession] = useState(session);
+  const [customGameType, setCustomGameType] = useState('');
+  const [customStakes, setCustomStakes] = useState('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   useEffect(() => {
     setEditedSession(session);
+    setCustomGameType(session.gameType);
+    setCustomStakes(session.stakes);
   }, [session]);
 
   const handleChange = (e) => {
@@ -24,8 +28,21 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
     setEditedSession({ ...editedSession, [name]: processedValue });
   };
 
+  const handleCustomGameTypeChange = (e) => {
+    setCustomGameType(e.target.value);
+  };
+
+  const handleCustomStakesChange = (e) => {
+    setCustomStakes(e.target.value);
+  };
+
   const handleSave = async () => {
-    await onUpdate(editedSession._id, editedSession);
+    const updatedSession = {
+      ...editedSession,
+      gameType: editedSession.gameType === 'Custom' ? customGameType : editedSession.gameType,
+      stakes: editedSession.stakes === 'Custom' ? customStakes : editedSession.stakes,
+    };
+    await onUpdate(updatedSession._id, updatedSession);
     setIsEditing(false);
   };
 
@@ -60,6 +77,10 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
   const profit = editedSession.cashOut - editedSession.buyIn;
   const profitColor = profit >= 0 ? 'text-green-500' : 'text-red-500';
 
+  const gameTypeOptions = ['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'];
+  const stakesOptions = ['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'];
+
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
@@ -141,43 +162,55 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
           </div>
           <div>
             {renderField("Game Type", editedSession.gameType, 
-              <select name="gameType" value={editedSession.gameType} onChange={handleChange} className="w-full p-2 bg-gray-800 text-white rounded">
-                <option value="No Limit Hold'em">No Limit Hold'em</option>
-                <option value="Pot Limit Hold'em">Pot Limit Hold'em</option>
-                <option value="Omaha">Omaha</option>
-                <option value="DBBP Omaha">DBBP Omaha</option>
-                <option value="Custom">Custom</option>
+              <select
+                name="gameType"
+                value={gameTypeOptions.includes(editedSession.gameType) ? editedSession.gameType : 'Custom'}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.value !== 'Custom') {
+                    setCustomGameType(e.target.value);
+                  }
+                }}
+                className="w-full p-2 bg-gray-800 text-white rounded"
+              >
+                {gameTypeOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
               </select>,
               GamepadIcon
             )}
-            {isEditing && editedSession.gameType === 'Custom' && (
+            {isEditing && (editedSession.gameType === 'Custom' || !gameTypeOptions.includes(editedSession.gameType)) && (
               <input 
                 type="text" 
-                name="customGameType" 
-                value={editedSession.customGameType || ''} 
-                onChange={handleChange} 
+                value={customGameType} 
+                onChange={handleCustomGameTypeChange}
                 className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
                 placeholder="Enter custom game type" 
               />
             )}
             {renderField("Stakes", editedSession.stakes, 
-              <select name="stakes" value={editedSession.stakes} onChange={handleChange} className="w-full p-2 bg-gray-800 text-white rounded">
-                <option value="0.10/0.20">0.10/0.20</option>
-                <option value="0.25/0.50">0.25/0.50</option>
-                <option value="0.5/1">0.5/1</option>
-                <option value="1/2">1/2</option>
-                <option value="2/3">2/3</option>
-                <option value="5/10">5/10</option>
-                <option value="Custom">Custom</option>
+              <select
+                name="stakes"
+                value={stakesOptions.includes(editedSession.stakes) ? editedSession.stakes : 'Custom'}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.value !== 'Custom') {
+                    setCustomStakes(e.target.value);
+                  }
+                }}
+                className="w-full p-2 bg-gray-800 text-white rounded"
+              >
+                {stakesOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
               </select>,
               DollarSign
             )}
-            {isEditing && editedSession.stakes === 'Custom' && (
+            {isEditing && (editedSession.stakes === 'Custom' || !stakesOptions.includes(editedSession.stakes)) && (
               <input 
                 type="text" 
-                name="customStakes" 
-                value={editedSession.customStakes || ''} 
-                onChange={handleChange} 
+                value={customStakes} 
+                onChange={handleCustomStakesChange}
                 className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
                 placeholder="Enter custom stakes" 
               />
