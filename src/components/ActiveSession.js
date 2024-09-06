@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Pause, Play, Plus, Camera, GamepadIcon, DollarSign, Monitor, Trophy, FileText } from 'lucide-react';
 
 const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSession }) => {
+  const navigate = useNavigate();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [buyIns, setBuyIns] = useState([{ amount: session.buyIn, count: 1 }]);
-  const [gameType, setGameType] = useState(session.gameType || 'Texas Hold\'em');
-  const [stakes, setStakes] = useState(session.stakes || '');
+  const [gameType, setGameType] = useState(session.gameType || 'No Limit Hold\'em');
+  const [stakes, setStakes] = useState(session.stakes || '1/2');
   const [setting, setSetting] = useState(session.setting || 'In Person');
   const [sessionType, setSessionType] = useState(session.sessionType || 'Cash');
   const [notes, setNotes] = useState(session.notes || '');
@@ -21,8 +23,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
     let interval;
     if (isRunning) {
       interval = setInterval(() => {
-        setElapsedTime((prevTime) => prevTime + 1);
-      }, 1000);
+        setElapsedTime((prevTime) => prevTime + 1);}, 1000);
     }
     return () => clearInterval(interval);
   }, [isRunning]);
@@ -53,9 +54,9 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
     });
   };
 
-  const handleFinishSession = () => {
+  const handleFinishSession = async () => {
     if (cashOut && !isNaN(cashOut)) {
-      onEndSession({
+      await onEndSession({
         buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
         cashOut: parseFloat(cashOut),
         duration: elapsedTime,
@@ -65,7 +66,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
         sessionType,
         notes
       });
-      setShowFinishModal(false);
+      navigate('/history');
     } else {
       alert('Please enter a valid cash out amount');
     }
@@ -126,9 +127,6 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
             <option>Omaha</option>
             <option>DBBP Omaha</option>
             <option value="Custom">Custom</option>
-            {!['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'].includes(gameType) && (
-              <option value={gameType}>{gameType}</option>
-            )}
           </select>
         </div>
 
@@ -158,9 +156,6 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
             <option>25/50</option>
             <option>100/200</option>
             <option value="Custom">Custom</option>
-            {!['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'].includes(stakes) && (
-              <option value={stakes}>{stakes}</option>
-            )}
           </select>
         </div>
 
@@ -311,7 +306,7 @@ const ActiveSession = ({ session, onEndSession, onUpdateSession, onDiscardSessio
                 className="px-4 py-2 bg-red-500 text-white rounded"
                 onClick={() => {
                   onDiscardSession();
-                  setShowFinishModal(false);
+                  navigate('/');
                 }}
               >
                 Discard

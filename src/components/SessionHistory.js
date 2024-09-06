@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isValid, parseISO } from 'date-fns';
-import { Edit, Save, X, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Filter } from 'lucide-react';
+import { Edit, Save, X, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Filter, ChevronLeft } from 'lucide-react';
 
 const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
+  const navigate = useNavigate();
   const [graphData, setGraphData] = useState([]);
   const [editingSession, setEditingSession] = useState(null);
   const [error, setError] = useState(null);
@@ -153,7 +155,11 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 h-screen overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-4 text-purple-500">Session History</h2>
+      <div className="flex justify-between items-center mb-4">
+        <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => navigate('/')} />
+        <h2 className="text-2xl font-bold text-purple-500">Session History</h2>
+        <div></div>
+      </div>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       
       <div className="mb-8">
@@ -357,8 +363,17 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-400">
-              <p><GamepadIcon size={14} className="inline mr-1" />
+              <p>
+                <GamepadIcon size={14} className="inline mr-1" />
                 Game: {session.gameType} - Stakes: {session.stakes}
+              </p>
+              <p>
+                <Monitor size={14} className="inline mr-1" />
+                Setting: {session.setting}
+              </p>
+              <p>
+                <Trophy size={14} className="inline mr-1" />
+                Type: {session.sessionType}
               </p>
             </div>
           </div>

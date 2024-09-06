@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus, GamepadIcon, DollarSign, Monitor, Trophy, Clock, Calendar } from 'lucide-react';
 
-const AddCompletedSession = ({ onBack, onSessionAdded }) => {
+const AddCompletedSession = ({ onSessionAdded }) => {
+  const navigate = useNavigate();
   const [sessionData, setSessionData] = useState({
     buyIn: '',
     cashOut: '',
@@ -42,8 +44,9 @@ const AddCompletedSession = ({ onBack, onSessionAdded }) => {
         endTime: endTime.toISOString(),
         isActive: false
       };
-
+  
       await onSessionAdded(newSession);
+      navigate('/history');
     } catch (error) {
       console.error('Failed to add session', error);
       alert('Failed to add session. Please try again.');
@@ -55,7 +58,7 @@ const AddCompletedSession = ({ onBack, onSessionAdded }) => {
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4">
-        <ChevronLeft className="text-purple-500 cursor-pointer" onClick={onBack} />
+        <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => navigate('/')} />
         <div className="text-2xl font-bold text-purple-500">Add Completed Session</div>
         <div></div>
       </div>
