@@ -11,7 +11,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const [error, setError] = useState(null);
   const [overallProfit, setOverallProfit] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
+  const [currentFilters, setCurrentFilters] = useState({
     profitMin: '',
     profitMax: '',
     setting: '',
@@ -21,8 +21,20 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     startDate: '',
     endDate: ''
   });
-  const [sortBy, setSortBy] = useState('startTime');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [appliedFilters, setAppliedFilters] = useState({
+    profitMin: '',
+    profitMax: '',
+    setting: '',
+    gameType: '',
+    stakes: '',
+    sessionType: '',
+    startDate: '',
+    endDate: ''
+  });
+  const [currentSortBy, setCurrentSortBy] = useState('startTime');
+  const [currentSortOrder, setCurrentSortOrder] = useState('desc');
+  const [appliedSortBy, setAppliedSortBy] = useState('startTime');
+  const [appliedSortOrder, setAppliedSortOrder] = useState('desc');
   const [filteredSessions, setFilteredSessions] = useState(sessions);
 
   useEffect(() => {
@@ -32,7 +44,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [sessions, filters, sortBy, sortOrder]);
+  }, [sessions, appliedFilters, appliedSortBy, appliedSortOrder]);
 
   const updateGraphData = (sessionData) => {
     let cumulativeProfit = 0;
@@ -99,51 +111,51 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+    setCurrentFilters({ ...currentFilters, [e.target.name]: e.target.value });
   };
 
   const applyFiltersAndSort = () => {
     let filtered = [...sessions];
 
-    if (filters.profitMin !== '') {
-      filtered = filtered.filter(session => (session.cashOut - session.buyIn) >= parseFloat(filters.profitMin));
+    if (appliedFilters.profitMin !== '') {
+      filtered = filtered.filter(session => (session.cashOut - session.buyIn) >= parseFloat(appliedFilters.profitMin));
     }
-    if (filters.profitMax !== '') {
-      filtered = filtered.filter(session => (session.cashOut - session.buyIn) <= parseFloat(filters.profitMax));
+    if (appliedFilters.profitMax !== '') {
+      filtered = filtered.filter(session => (session.cashOut - session.buyIn) <= parseFloat(appliedFilters.profitMax));
     }
-    if (filters.setting !== '') {
-      filtered = filtered.filter(session => session.setting === filters.setting);
+    if (appliedFilters.setting !== '') {
+      filtered = filtered.filter(session => session.setting === appliedFilters.setting);
     }
-    if (filters.gameType !== '') {
-      filtered = filtered.filter(session => session.gameType === filters.gameType);
+    if (appliedFilters.gameType !== '') {
+      filtered = filtered.filter(session => session.gameType === appliedFilters.gameType);
     }
-    if (filters.stakes !== '') {
-      filtered = filtered.filter(session => session.stakes === filters.stakes);
+    if (appliedFilters.stakes !== '') {
+      filtered = filtered.filter(session => session.stakes === appliedFilters.stakes);
     }
-    if (filters.sessionType !== '') {
-      filtered = filtered.filter(session => session.sessionType === filters.sessionType);
+    if (appliedFilters.sessionType !== '') {
+      filtered = filtered.filter(session => session.sessionType === appliedFilters.sessionType);
     }
-    if (filters.startDate && filters.endDate) {
-      const start = parseISO(filters.startDate);
-      const end = endOfDay(parseISO(filters.endDate));
+    if (appliedFilters.startDate && appliedFilters.endDate) {
+      const start = parseISO(appliedFilters.startDate);
+      const end = endOfDay(parseISO(appliedFilters.endDate));
       filtered = filtered.filter(session => 
         isWithinInterval(parseISO(session.startTime), { start, end })
       );
     }
 
     filtered.sort((a, b) => {
-      if (sortBy === 'date') {
-        return sortOrder === 'asc' ? new Date(a.startTime) - new Date(b.startTime) : new Date(b.startTime) - new Date(a.startTime);
-      } else if (sortBy === 'profit') {
+      if (appliedSortBy === 'date') {
+        return appliedSortOrder === 'asc' ? new Date(a.startTime) - new Date(b.startTime) : new Date(b.startTime) - new Date(a.startTime);
+      } else if (appliedSortBy === 'profit') {
         const profitA = a.cashOut - a.buyIn;
         const profitB = b.cashOut - b.buyIn;
-        return sortOrder === 'asc' ? profitA - profitB : profitB - profitA;
-      } else if (sortBy === 'duration') {
-        return sortOrder === 'asc' ? a.duration - b.duration : b.duration - a.duration;
-      } else if (sortBy === 'profitPerHour') {
+        return appliedSortOrder === 'asc' ? profitA - profitB : profitB - profitA;
+      } else if (appliedSortBy === 'duration') {
+        return appliedSortOrder === 'asc' ? a.duration - b.duration : b.duration - a.duration;
+      } else if (appliedSortBy === 'profitPerHour') {
         const profitPerHourA = a.duration > 0 ? ((a.cashOut - a.buyIn) / a.duration) * 60 : 0;
         const profitPerHourB = b.duration > 0 ? ((b.cashOut - b.buyIn) / b.duration) * 60 : 0;
-        return sortOrder === 'asc' ? profitPerHourA - profitPerHourB : profitPerHourB - profitPerHourA;
+        return appliedSortOrder === 'asc' ? profitPerHourA - profitPerHourB : profitPerHourB - profitPerHourA;
       }
       return 0;
     });
@@ -151,8 +163,15 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     setFilteredSessions(filtered);
   };
 
+  const handleApplyFilters = () => {
+    setAppliedFilters(currentFilters);
+    setAppliedSortBy(currentSortBy);
+    setAppliedSortOrder(currentSortOrder);
+    setShowFilters(false);
+  };
+
   const clearFilters = () => {
-    setFilters({
+    const emptyFilters = {
       profitMin: '',
       profitMax: '',
       setting: '',
@@ -161,9 +180,13 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       sessionType: '',
       startDate: '',
       endDate: ''
-    });
-    setSortBy('date');
-    setSortOrder('desc');
+    };
+    setCurrentFilters(emptyFilters);
+    setAppliedFilters(emptyFilters);
+    setCurrentSortBy('startTime');
+    setCurrentSortOrder('desc');
+    setAppliedSortBy('startTime');
+    setAppliedSortOrder('desc');
   };
 
   return (
@@ -198,7 +221,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <input
                     type="number"
                     name="profitMin"
-                    value={filters.profitMin}
+                    value={currentFilters.profitMin}
                     onChange={handleFilterChange}
                     placeholder="Min"
                     className="w-full p-2 bg-gray-700 text-white rounded"
@@ -206,7 +229,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <input
                     type="number"
                     name="profitMax"
-                    value={filters.profitMax}
+                    value={currentFilters.profitMax}
                     onChange={handleFilterChange}
                     placeholder="Max"
                     className="w-full p-2 bg-gray-700 text-white rounded"
@@ -219,14 +242,14 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <input
                     type="date"
                     name="startDate"
-                    value={filters.startDate}
+                    value={currentFilters.startDate}
                     onChange={handleFilterChange}
                     className="w-full p-2 bg-gray-700 text-white rounded"
                   />
                   <input
                     type="date"
                     name="endDate"
-                    value={filters.endDate}
+                    value={currentFilters.endDate}
                     onChange={handleFilterChange}
                     className="w-full p-2 bg-gray-700 text-white rounded"
                   />
@@ -236,7 +259,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Setting</label>
                 <select
                   name="setting"
-                  value={filters.setting}
+                  value={currentFilters.setting}
                   onChange={handleFilterChange}
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
@@ -249,7 +272,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Game Type</label>
                 <select
                   name="gameType"
-                  value={filters.gameType}
+                  value={currentFilters.gameType}
                   onChange={handleFilterChange}
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
@@ -264,7 +287,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Stakes</label>
                 <select
                   name="stakes"
-                  value={filters.stakes}
+                  value={currentFilters.stakes}
                   onChange={handleFilterChange}
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
@@ -281,7 +304,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Session Type</label>
                 <select
                   name="sessionType"
-                  value={filters.sessionType}
+                  value={currentFilters.sessionType}
                   onChange={handleFilterChange}
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
@@ -296,8 +319,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
                 <div className="flex space-x-2">
                   <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    value={currentSortBy}
+                    onChange={(e) => setCurrentSortBy(e.target.value)}
                     className="p-2 bg-gray-700 text-white rounded"
                   >
                     <option value="date">Date</option>
@@ -306,8 +329,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                     <option value="profitPerHour">Profit/Hour</option>
                   </select>
                   <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
+                    value={currentSortOrder}
+                    onChange={(e) => setCurrentSortOrder(e.target.value)}
                     className="p-2 bg-gray-700 text-white rounded"
                   >
                     <option value="asc">Ascending</option>
@@ -317,7 +340,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
               </div>
               <div>
                 <button
-                  onClick={applyFiltersAndSort}
+                  onClick={handleApplyFilters}
                   className="bg-purple-500 text-white px-4 py-2 rounded mr-2"
                 >
                   Apply
@@ -362,7 +385,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
           <div key={session._id} className="bg-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-lg font-semibold">
-              {isValid(parseISO(session.startTime)) 
+                {isValid(parseISO(session.startTime)) 
                   ? format(parseISO(session.startTime), 'MMM dd, yyyy')
                   : 'Invalid Date'}
               </span>
