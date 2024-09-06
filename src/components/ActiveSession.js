@@ -79,13 +79,12 @@ const ActiveSession = () => {
   };
 
   const handleFinishSession = async () => {
-    const cashOutValue = parseFloat(cashOut);
-    if (!isNaN(cashOutValue)) {
+    if (cashOut !== '' && !isNaN(Number(cashOut))) {
       try {
         const updatedSession = {
           ...session,
           buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
-          cashOut: cashOutValue,
+          cashOut: cashOut, // This will now be a string, which is fine
           duration: Math.ceil(elapsedSeconds / 60),
           gameType: gameType === 'Custom' ? customGameType : gameType,
           stakes: stakes === 'Custom' ? customStakes : stakes,
@@ -329,7 +328,7 @@ const ActiveSession = () => {
         </div>
       )}
 
-      {showFinishModal && (
+{showFinishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
             <h3 className="text-2xl font-bold mb-4 text-purple-500">Finish Session</h3>

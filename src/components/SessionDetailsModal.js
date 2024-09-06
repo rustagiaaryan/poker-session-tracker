@@ -19,7 +19,7 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
     const { name, value, type } = e.target;
     let processedValue = value;
 
-    if (type === 'number') {
+    if (type === 'number' && name !== 'cashOut') {
       processedValue = value === '' ? 0 : parseFloat(value);
     } else if (name === 'startTime') {
       processedValue = new Date(value).toISOString();
@@ -59,7 +59,7 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
   };
 
   const calculateProfitPerHour = (session) => {
-    const profit = session.cashOut - session.buyIn;
+    const profit = Number(session.cashOut) - Number(session.buyIn);
     const hours = session.duration / 60;
     return hours > 0 ? (profit / hours).toFixed(2) : '0.00';
   };
@@ -74,13 +74,12 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
     </div>
   );
 
-  const profit = editedSession.cashOut - editedSession.buyIn;
+  const profit = Number(editedSession.cashOut) - Number(editedSession.buyIn);
   const profitColor = profit >= 0 ? 'text-green-500' : 'text-red-500';
 
   const gameTypeOptions = ['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'];
   const stakesOptions = ['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'];
 
-  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
@@ -102,7 +101,7 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
               />,
               Calendar
             )}
-            {renderField("Buy In", `$${editedSession.buyIn.toFixed(2)}`, 
+            {renderField("Buy In", `$${Number(editedSession.buyIn).toFixed(2)}`, 
               <input 
                 type="number" 
                 name="buyIn" 
@@ -114,7 +113,7 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
               />,
               DollarSign
             )}
-            {renderField("Cash Out", `$${editedSession.cashOut.toFixed(2)}`, 
+            {renderField("Cash Out", `$${Number(editedSession.cashOut).toFixed(2)}`, 
               <input 
                 type="number" 
                 name="cashOut" 
@@ -147,129 +146,129 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
             {renderField("Profit/Hour", `$${calculateProfitPerHour(editedSession)}`, null, TrendingUp)}
             {renderField("Setting", editedSession.setting, 
               <select name="setting" value={editedSession.setting} onChange={handleChange} className="w-full p-2 bg-gray-800 text-white rounded">
-                <option value="In Person">In Person</option>
-                <option value="Online">Online</option>
-              </select>,
-              Monitor
-            )}
-            {renderField("Session Type", editedSession.sessionType, 
-              <select name="sessionType" value={editedSession.sessionType} onChange={handleChange} className="w-full p-2 bg-gray-800 text-white rounded">
-                <option value="Cash">Cash</option>
-                <option value="Tournament">Tournament</option>
-              </select>,
-              Trophy
-            )}
-          </div>
-          <div>
-            {renderField("Game Type", editedSession.gameType, 
-              <select
-                name="gameType"
-                value={gameTypeOptions.includes(editedSession.gameType) ? editedSession.gameType : 'Custom'}
-                onChange={(e) => {
-                  handleChange(e);
-                  if (e.target.value !== 'Custom') {
-                    setCustomGameType(e.target.value);
-                  }
-                }}
-                className="w-full p-2 bg-gray-800 text-white rounded"
-              >
-                {gameTypeOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>,
-              GamepadIcon
-            )}
-            {isEditing && (editedSession.gameType === 'Custom' || !gameTypeOptions.includes(editedSession.gameType)) && (
-              <input 
-                type="text" 
-                value={customGameType} 
-                onChange={handleCustomGameTypeChange}
-                className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
-                placeholder="Enter custom game type" 
-              />
-            )}
-            {renderField("Stakes", editedSession.stakes, 
-              <select
-                name="stakes"
-                value={stakesOptions.includes(editedSession.stakes) ? editedSession.stakes : 'Custom'}
-                onChange={(e) => {
-                  handleChange(e);
-                  if (e.target.value !== 'Custom') {
-                    setCustomStakes(e.target.value);
-                  }
-                }}
-                className="w-full p-2 bg-gray-800 text-white rounded"
-              >
-                {stakesOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>,
-              DollarSign
-            )}
-            {isEditing && (editedSession.stakes === 'Custom' || !stakesOptions.includes(editedSession.stakes)) && (
-              <input 
-                type="text" 
-                value={customStakes} 
-                onChange={handleCustomStakesChange}
-                className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
-                placeholder="Enter custom stakes" 
-              />
-            )}
-            {renderField("Notes", editedSession.notes || 'No notes',
-              <textarea
-                name="notes"
-                value={editedSession.notes || ''}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800 text-white rounded"
-                rows="3"
-              />,
-              FileText
-            )}
-          </div>
+              <option value="In Person">In Person</option>
+              <option value="Online">Online</option>
+            </select>,
+            Monitor
+          )}
+          {renderField("Session Type", editedSession.sessionType, 
+            <select name="sessionType" value={editedSession.sessionType} onChange={handleChange} className="w-full p-2 bg-gray-800 text-white rounded">
+              <option value="Cash">Cash</option>
+              <option value="Tournament">Tournament</option>
+            </select>,
+            Trophy
+          )}
         </div>
-        <div className="sticky bottom-0 bg-gray-900 p-4 border-t border-gray-800 flex justify-between">
-          {isEditing ? (
-            <>
-              <button onClick={() => setIsEditing(false)} className="bg-gray-600 text-white px-4 py-2 rounded">
-                Cancel
-              </button>
-              <button onClick={handleSave} className="bg-green-500 text-white px-4 py-2 rounded">
-                <Save size={18} className="inline mr-2" />
-                Save Changes
-              </button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => setShowDeleteConfirmation(true)} className="bg-red-500 text-white px-4 py-2 rounded">
-                <Trash2 size={18} className="inline mr-2" />
-                Delete Session
-              </button>
-              <button onClick={() => setIsEditing(true)} className="bg-purple-500 text-white px-4 py-2 rounded">
-                <Edit size={18} className="inline mr-2" />
-                Edit Session
-              </button>
-            </>
+        <div>
+          {renderField("Game Type", editedSession.gameType, 
+            <select
+              name="gameType"
+              value={gameTypeOptions.includes(editedSession.gameType) ? editedSession.gameType : 'Custom'}
+              onChange={(e) => {
+                handleChange(e);
+                if (e.target.value !== 'Custom') {
+                  setCustomGameType(e.target.value);
+                }
+              }}
+              className="w-full p-2 bg-gray-800 text-white rounded"
+            >
+              {gameTypeOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>,
+            GamepadIcon
+          )}
+          {isEditing && (editedSession.gameType === 'Custom' || !gameTypeOptions.includes(editedSession.gameType)) && (
+            <input 
+              type="text" 
+              value={customGameType} 
+              onChange={handleCustomGameTypeChange}
+              className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
+              placeholder="Enter custom game type" 
+            />
+          )}
+          {renderField("Stakes", editedSession.stakes, 
+            <select
+              name="stakes"
+              value={stakesOptions.includes(editedSession.stakes) ? editedSession.stakes : 'Custom'}
+              onChange={(e) => {
+                handleChange(e);
+                if (e.target.value !== 'Custom') {
+                  setCustomStakes(e.target.value);
+                }
+              }}
+              className="w-full p-2 bg-gray-800 text-white rounded"
+            >
+              {stakesOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>,
+            DollarSign
+          )}
+          {isEditing && (editedSession.stakes === 'Custom' || !stakesOptions.includes(editedSession.stakes)) && (
+            <input 
+              type="text" 
+              value={customStakes} 
+              onChange={handleCustomStakesChange}
+              className="w-full p-2 bg-gray-800 text-white rounded mt-2" 
+              placeholder="Enter custom stakes" 
+            />
+          )}
+          {renderField("Notes", editedSession.notes || 'No notes',
+            <textarea
+              name="notes"
+              value={editedSession.notes || ''}
+              onChange={handleChange}
+              className="w-full p-2 bg-gray-800 text-white rounded"
+              rows="3"
+            />,
+            FileText
           )}
         </div>
       </div>
-      {showDeleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4 text-white">Confirm Deletion</h3>
-            <p className="text-gray-300 mb-4">Are you sure you want to delete this session? This action cannot be undone.</p>
-            <div className="flex justify-end">
-              <button onClick={() => setShowDeleteConfirmation(false)} className="bg-gray-600 text-white px-4 py-2 rounded mr-2">
-                Cancel
-              </button>
-              <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded">
-                Delete
-              </button>
-            </div>
+      <div className="sticky bottom-0 bg-gray-900 p-4 border-t border-gray-800 flex justify-between">
+        {isEditing ? (
+          <>
+            <button onClick={() => setIsEditing(false)} className="bg-gray-600 text-white px-4 py-2 rounded">
+              Cancel
+            </button>
+            <button onClick={handleSave} className="bg-green-500 text-white px-4 py-2 rounded">
+              <Save size={18} className="inline mr-2" />
+              Save Changes
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setShowDeleteConfirmation(true)} className="bg-red-500 text-white px-4 py-2 rounded">
+              <Trash2 size={18} className="inline mr-2" />
+              Delete Session
+            </button>
+            <button onClick={() => setIsEditing(true)} className="bg-purple-500 text-white px-4 py-2 rounded">
+              <Edit size={18} className="inline mr-2" />
+              Edit Session
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+    {showDeleteConfirmation && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-gray-800 p-6 rounded-lg">
+          <h3 className="text-xl font-bold mb-4 text-white">Confirm Deletion</h3>
+          <p className="text-gray-300 mb-4">Are you sure you want to delete this session? This action cannot be undone.</p>
+          <div className="flex justify-end">
+            <button onClick={() => setShowDeleteConfirmation(false)} className="bg-gray-600 text-white px-4 py-2 rounded mr-2">
+              Cancel
+            </button>
+            <button onClick={handleDelete} className="bg-red-500 text-white px-4 py-2 rounded">
+              Delete
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 };
 
 export default SessionDetailsModal;
