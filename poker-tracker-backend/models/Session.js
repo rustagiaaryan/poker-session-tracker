@@ -29,22 +29,18 @@ const SessionSchema = new mongoose.Schema({
   stakes: {
     type: String
   },
+  setting: {
+    type: String
+  },
+  sessionType: {
+    type: String
+  },
   notes: {
     type: String
   },
   isActive: {
     type: Boolean,
     default: true
-  },
-  setting: {
-    type: String,
-    enum: ['In Person', 'Online'],
-    default: 'In Person'
-  },
-  sessionType: {
-    type: String,
-    enum: ['Cash', 'Tournament'],
-    default: 'Cash'
   }
 });
 

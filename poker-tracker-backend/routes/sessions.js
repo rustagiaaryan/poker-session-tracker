@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Session = require('../models/Session');
+const mongoose = require('mongoose');
 
 // Get all sessions for a user
 router.get('/', auth, async (req, res) => {
@@ -118,5 +119,38 @@ router.get('/filter', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+router.delete('/:id', auth, async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      // Check if the id is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ msg: 'Invalid session ID' });
+      }
+  
+      let session = await Session.findById(id);
+  
+      if (!session) {
+        return res.status(404).json({ msg: 'Session not found' });
+      }
+  
+      // Make sure user owns session
+      if (session.user.toString() !== req.user.id) {
+        return res.status(401).json({ msg: 'User not authorized' });
+      }
+  
+      const result = await Session.findByIdAndDelete(id);
+  
+      if (!result) {
+        return res.status(500).json({ msg: 'Failed to delete session' });
+      }
+  
+      res.json({ msg: 'Session removed' });
+    } catch (err) {
+      console.error('Error in delete session route:', err);
+      res.status(500).json({ msg: 'Server Error', error: err.message });
+    }
+  });
 
 module.exports = router;

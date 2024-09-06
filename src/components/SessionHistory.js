@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isValid, parseISO, isWithinInterval, endOfDay } from 'date-fns';
 import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy } from 'lucide-react';
-import SessionDetailsModal from './SessionDetailsModal'; // Make sure this path is correct
+import SessionDetailsModal from './SessionDetailsModal';
+import { deleteSession } from '../services/api';
 
 const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const navigate = useNavigate();
@@ -66,6 +67,28 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const calculateOverallProfit = (sessionData) => {
     const totalProfit = sessionData.reduce((sum, session) => sum + (session.cashOut - session.buyIn), 0);
     setOverallProfit(totalProfit);
+  };
+
+  const handleUpdateSession = async (sessionId, updatedSessionData) => {
+    try {
+      await onUpdateSession(sessionId, updatedSessionData);
+      setSelectedSession(null);
+      fetchSessions();
+    } catch (error) {
+      console.error('Failed to update session', error);
+      setError('Failed to update session. Please try again.');
+    }
+  };
+
+  const handleDeleteSession = async (sessionId) => {
+    try {
+      await deleteSession(sessionId);
+      setSelectedSession(null);
+      fetchSessions();
+    } catch (error) {
+      console.error('Failed to delete session', error);
+      setError(`Failed to delete session: ${error.message}`);
+    }
   };
 
   const formatDuration = (minutes) => {
@@ -423,7 +446,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
         <SessionDetailsModal
           session={selectedSession}
           onClose={() => setSelectedSession(null)}
-          onUpdate={onUpdateSession}
+          onUpdate={handleUpdateSession}
+          onDelete={handleDeleteSession}
         />
       )}
     </div>
