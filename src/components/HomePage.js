@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Play, DollarSign, Clock } from 'lucide-react';
 import { getSessions, createSession } from '../services/api';
+import Toast from './Toast';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [buyIn, setBuyIn] = useState('');
   const [activeSessions, setActiveSessions] = useState([]);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     fetchActiveSessions();
@@ -33,10 +35,10 @@ const HomePage = () => {
         navigate('/active-session', { state: { sessionId: response._id } });
       } catch (error) {
         console.error('Failed to start session', error);
-        alert(`Failed to start session. Error: ${error.response?.data?.message || error.message}`);
+        setToastMessage(`Failed to start session. Error: ${error.response?.data?.message || error.message}`);
       }
     } else {
-      alert('Please enter a valid buy-in amount');
+      setToastMessage('Please enter a valid buy-in amount');
     }
   };
 
@@ -102,6 +104,13 @@ const HomePage = () => {
           View Session History
         </button>
       </div>
+
+      {toastMessage && (
+        <Toast 
+          message={toastMessage} 
+          onClose={() => setToastMessage('')}
+        />
+      )}
     </div>
   );
 };

@@ -61,7 +61,7 @@ const AddCompletedSession = ({ onSessionAdded }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-2xl mx-auto">
+    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => navigate('/')} />
         <div className="text-2xl font-bold text-purple-500">Add Completed Session</div>

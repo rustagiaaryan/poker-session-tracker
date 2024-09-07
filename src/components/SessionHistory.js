@@ -38,6 +38,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const [appliedSortBy, setAppliedSortBy] = useState('startTime');
   const [appliedSortOrder, setAppliedSortOrder] = useState('desc');
   const [filteredSessions, setFilteredSessions] = useState(sessions);
+  const [customGameType, setCustomGameType] = useState('');
+  const [customStakes, setCustomStakes] = useState('');
 
   useEffect(() => {
     updateGraphData(filteredSessions);
@@ -116,7 +118,14 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const handleFilterChange = (e) => {
-    setCurrentFilters({ ...currentFilters, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setCurrentFilters({ ...currentFilters, [name]: value });
+    if (name === 'gameType' && value !== 'Custom') {
+      setCustomGameType('');
+    }
+    if (name === 'stakes' && value !== 'Custom') {
+      setCustomStakes('');
+    }
   };
 
   const applyFiltersAndSort = () => {
@@ -132,10 +141,18 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       filtered = filtered.filter(session => session.setting === appliedFilters.setting);
     }
     if (appliedFilters.gameType !== '') {
-      filtered = filtered.filter(session => session.gameType === appliedFilters.gameType);
+      if (appliedFilters.gameType === 'Custom') {
+        filtered = filtered.filter(session => session.gameType === customGameType);
+      } else {
+        filtered = filtered.filter(session => session.gameType === appliedFilters.gameType);
+      }
     }
     if (appliedFilters.stakes !== '') {
-      filtered = filtered.filter(session => session.stakes === appliedFilters.stakes);
+      if (appliedFilters.stakes === 'Custom') {
+        filtered = filtered.filter(session => session.stakes === customStakes);
+      } else {
+        filtered = filtered.filter(session => session.stakes === appliedFilters.stakes);
+      }
     }
     if (appliedFilters.sessionType !== '') {
       filtered = filtered.filter(session => session.sessionType === appliedFilters.sessionType);
@@ -169,7 +186,11 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const handleApplyFilters = () => {
-    setAppliedFilters(currentFilters);
+    setAppliedFilters({
+      ...currentFilters,
+      gameType: currentFilters.gameType === 'Custom' ? customGameType : currentFilters.gameType,
+      stakes: currentFilters.stakes === 'Custom' ? customStakes : currentFilters.stakes,
+    });
     setAppliedSortBy(currentSortBy);
     setAppliedSortOrder(currentSortOrder);
     setShowFilters(false);
@@ -192,7 +213,12 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     setCurrentSortOrder('desc');
     setAppliedSortBy('startTime');
     setAppliedSortOrder('desc');
+    setCustomGameType('');
+    setCustomStakes('');
   };
+
+  const gameTypeOptions = ['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'];
+  const stakesOptions = ['0.10/0.20', '0.25/0.50', '0.5/1', '1/2', '2/3', '5/10', '10/20', '25/50', '100/200', 'Custom'];
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 h-screen overflow-y-auto">
@@ -282,11 +308,19 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
                   <option value="">All</option>
-                  <option value="No Limit Hold'em">No Limit Hold'em</option>
-                  <option value="Pot Limit Hold'em">Pot Limit Hold'em</option>
-                  <option value="Omaha">Omaha</option>
-                  <option value="DBBP Omaha">DBBP Omaha</option>
+                  {gameTypeOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
                 </select>
+                {currentFilters.gameType === 'Custom' && (
+                  <input
+                    type="text"
+                    value={customGameType}
+                    onChange={(e) => setCustomGameType(e.target.value)}
+                    placeholder="Enter custom game type"
+                    className="w-full p-2 bg-gray-700 text-white rounded mt-2"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Stakes</label>
@@ -297,13 +331,19 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   className="w-full p-2 bg-gray-700 text-white rounded"
                 >
                   <option value="">All</option>
-                  <option value="0.10/0.20">0.10/0.20</option>
-                  <option value="0.25/0.50">0.25/0.50</option>
-                  <option value="0.5/1">0.5/1</option>
-                  <option value="1/2">1/2</option>
-                  <option value="2/3">2/3</option>
-                  <option value="5/10">5/10</option>
+                  {stakesOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
                 </select>
+                {currentFilters.stakes === 'Custom' && (
+                  <input
+                    type="text"
+                    value={customStakes}
+                    onChange={(e) => setCustomStakes(e.target.value)}
+                    placeholder="Enter custom stakes"
+                    className="w-full p-2 bg-gray-700 text-white rounded mt-2"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Session Type</label>

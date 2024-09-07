@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Pause, Play, Plus, GamepadIcon, DollarSign, Monitor, Trophy, Clock, FileText } from 'lucide-react';
+import { ChevronLeft, Pause, Play, Plus, GamepadIcon, DollarSign, Monitor, Trophy, Clock, FileText, X, Edit } from 'lucide-react';
 import { getSession, updateSession, deleteSession } from '../services/api';
 
 const ActiveSession = () => {
@@ -21,6 +21,11 @@ const ActiveSession = () => {
   const [showCustomStakes, setShowCustomStakes] = useState(false);
   const [customGameType, setCustomGameType] = useState('');
   const [customStakes, setCustomStakes] = useState('');
+  const [editableDuration, setEditableDuration] = useState(0);
+  const [showBuyInModal, setShowBuyInModal] = useState(false);
+  const [newBuyInAmount, setNewBuyInAmount] = useState('');
+  const [isEditingTime, setIsEditingTime] = useState(false);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     const sessionId = location.state?.sessionId;
@@ -38,6 +43,7 @@ const ActiveSession = () => {
         setElapsedSeconds((prevSeconds) => prevSeconds + 1);
       }, 1000);
     }
+    intervalRef.current = interval;
     return () => clearInterval(interval);
   }, [isRunning, session]);
 
@@ -45,7 +51,7 @@ const ActiveSession = () => {
     try {
       const fetchedSession = await getSession(sessionId);
       setSession(fetchedSession);
-      setBuyIns([{ amount: fetchedSession.buyIn, count: 1 }]);
+      setBuyIns(fetchedSession.buyIns || [{ amount: fetchedSession.buyIn, count: 1 }]);
       setGameType(fetchedSession.gameType || 'No Limit Hold\'em');
       setStakes(fetchedSession.stakes || '1/2');
       setSetting(fetchedSession.setting || 'In Person');
@@ -64,7 +70,7 @@ const ActiveSession = () => {
     try {
       const updatedSession = {
         ...session,
-        buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
+        buyIns: buyIns,
         gameType: gameType === 'Custom' ? customGameType : gameType,
         stakes: stakes === 'Custom' ? customStakes : stakes,
         setting,
@@ -78,14 +84,20 @@ const ActiveSession = () => {
     }
   };
 
+  const handleFinishClick = () => {
+    setShowFinishModal(true);
+    clearInterval(intervalRef.current);
+    setEditableDuration(elapsedSeconds);
+  };
+
   const handleFinishSession = async () => {
     if (cashOut !== '' && !isNaN(Number(cashOut))) {
       try {
         const updatedSession = {
           ...session,
-          buyIn: buyIns.reduce((total, buyIn) => total + buyIn.amount, 0),
-          cashOut: cashOut, // This will now be a string, which is fine
-          duration: Math.ceil(elapsedSeconds / 60),
+          buyIns: buyIns,
+          cashOut: cashOut,
+          duration: editableDuration,
           gameType: gameType === 'Custom' ? customGameType : gameType,
           stakes: stakes === 'Custom' ? customStakes : stakes,
           setting,
@@ -121,20 +133,55 @@ const ActiveSession = () => {
   };
 
   const handleAddBuyIn = () => {
-    const newBuyIn = prompt('Enter additional buy-in amount:');
-    if (newBuyIn && !isNaN(newBuyIn)) {
-      setBuyIns([...buyIns, { amount: parseFloat(newBuyIn), count: 1 }]);
+    setShowBuyInModal(true);
+  };
+
+  const submitNewBuyIn = () => {
+    if (newBuyInAmount && !isNaN(newBuyInAmount)) {
+      setBuyIns([...buyIns, { amount: parseFloat(newBuyInAmount), count: 1 }]);
+      setNewBuyInAmount('');
+      setShowBuyInModal(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-3xl mx-auto">
+    <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => navigate('/')} />
-        <div className="text-3xl font-bold text-purple-500">{formatTime(elapsedSeconds)}</div>
+        <div className="text-3xl font-bold text-purple-500">
+          {isEditingTime ? (
+            <div className="flex items-center">
+              <input
+                type="number"
+                value={Math.floor(editableDuration / 3600)}
+                onChange={(e) => setEditableDuration(e.target.value * 3600 + (editableDuration % 3600))}
+                className="w-16 p-2 bg-gray-800 text-white rounded mr-1"
+              />
+              :
+              <input
+                type="number"
+                value={Math.floor((editableDuration % 3600) / 60)}
+                onChange={(e) => setEditableDuration(Math.floor(editableDuration / 3600) * 3600 + e.target.value * 60 + (editableDuration % 60))}
+                className="w-16 p-2 bg-gray-800 text-white rounded mx-1"
+              />
+              :
+              <input
+                type="number"
+                value={editableDuration % 60}
+                onChange={(e) => setEditableDuration(Math.floor(editableDuration / 60) * 60 + Number(e.target.value))}
+                className="w-16 p-2 bg-gray-800 text-white rounded ml-1"
+              />
+            </div>
+          ) : (
+            formatTime(elapsedSeconds)
+          )}
+          <button onClick={() => setIsEditingTime(!isEditingTime)} className="ml-2 text-purple-500">
+            <Edit size={18} />
+          </button>
+        </div>
         <button 
           className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition duration-300"
-          onClick={() => setShowFinishModal(true)}
+          onClick={handleFinishClick}
         >
           Finish
         </button>
@@ -156,11 +203,20 @@ const ActiveSession = () => {
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">Buy-In</span>
             <div className="flex items-center">
-              <span className="mr-2 text-xl font-bold">${buyIns.reduce((sum, bi) => sum + bi.amount * bi.count, 0).toFixed(2)}</span>
-              <span className="bg-purple-500 text-white px-2 py-1 rounded-lg mr-2">{buyIns.reduce((sum, bi) => sum + bi.count, 0)}</span>
+              <span className="mr-2 text-xl font-bold">${buyIns.reduce((sum, bi) => sum + bi.amount, 0).toFixed(2)}</span>
+              <span className="bg-purple-500 text-white px-2 py-1 rounded-lg mr-2">{buyIns.length}</span>
               <Plus className="text-purple-500 cursor-pointer hover:text-purple-400 transition duration-300" onClick={handleAddBuyIn} />
             </div>
           </div>
+          {buyIns.length > 1 && (
+            <div className="mt-2">
+              {buyIns.map((buyIn, index) => (
+                <div key={index} className="text-sm text-gray-400">
+                  Buy-in {index + 1}: ${buyIn.amount.toFixed(2)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
@@ -264,6 +320,35 @@ const ActiveSession = () => {
         </div>
       </div>
 
+      {showBuyInModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-purple-500">Add Buy-In</h3>
+            <input
+              type="number"
+              className="w-full p-2 mb-4 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={newBuyInAmount}
+              onChange={(e) => setNewBuyInAmount(e.target.value)}
+              placeholder="Enter buy-in amount"
+            />
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg mr-2 hover:bg-gray-700 transition duration-300"
+                onClick={() => setShowBuyInModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300"
+                onClick={submitNewBuyIn}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCustomGameType && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
@@ -328,11 +413,49 @@ const ActiveSession = () => {
         </div>
       )}
 
-{showFinishModal && (
+      {showFinishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
+          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md relative">
+            <button 
+              onClick={() => setShowFinishModal(false)} 
+              className="absolute top-2 right-2 text-gray-400 hover:text-white"
+            >
+              <X size={24} />
+            </button>
             <h3 className="text-2xl font-bold mb-4 text-purple-500">Finish Session</h3>
-            <p className="text-center text-4xl font-bold text-purple-500 mb-6">{formatTime(elapsedSeconds)}</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-400 mb-1">Duration</label>
+              <div className="text-2xl font-bold text-purple-500 flex items-center">
+                {formatTime(editableDuration)}
+                <button onClick={() => setIsEditingTime(!isEditingTime)} className="ml-2 text-purple-500">
+                  <Edit size={18} />
+                </button>
+              </div>
+              {isEditingTime && (
+                <div className="flex items-center mt-2">
+                  <input
+                    type="number"
+                    value={Math.floor(editableDuration / 3600)}
+                    onChange={(e) => setEditableDuration(e.target.value * 3600 + (editableDuration % 3600))}
+                    className="w-16 p-2 bg-gray-700 text-white rounded mr-1"
+                  />
+                  :
+                  <input
+                    type="number"
+                    value={Math.floor((editableDuration % 3600) / 60)}
+                    onChange={(e) => setEditableDuration(Math.floor(editableDuration / 3600) * 3600 + e.target.value * 60 + (editableDuration % 60))}
+                    className="w-16 p-2 bg-gray-700 text-white rounded mx-1"
+                  />
+                  :
+                  <input
+                    type="number"
+                    value={editableDuration % 60}
+                    onChange={(e) => setEditableDuration(Math.floor(editableDuration / 60) * 60 + Number(e.target.value))}
+                    className="w-16 p-2 bg-gray-700 text-white rounded ml-1"
+                  />
+                </div>
+              )}
+            </div>
             <input
               type="number"
               className="w-full p-3 mb-6 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
