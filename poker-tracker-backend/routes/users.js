@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const sgMail = require('@sendgrid/mail');
+const auth = require('../middleware/auth');
+
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -158,5 +160,32 @@ router.post('/reset-password/:token', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+router.post('/change-password', auth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Current password is incorrect' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    res.json({ msg: 'Password changed successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 
 module.exports = router;

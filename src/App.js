@@ -77,6 +77,24 @@ const App = () => {
     navigate('/login');
   };
 
+  const NavbarIcon = ({ icon: Icon, path, label }) => {
+    const isActive = location.pathname === path;
+    return (
+      <div className="relative group">
+        <Icon
+          className={`w-6 h-6 cursor-pointer transition-colors duration-200 ${
+            isActive ? 'text-purple-500' : 'text-gray-400 group-hover:text-white'
+          }`}
+          onClick={() => navigate(path)}
+        />
+        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {label}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       <header className="flex justify-between items-center p-4">
@@ -103,10 +121,10 @@ const App = () => {
 
       {isAuthenticated && (
         <footer className="flex justify-around items-center p-4 bg-gray-800">
-          <Home className="text-gray-400 w-6 h-6 cursor-pointer" onClick={() => navigate('/')} />
-          <PlusCircle className="text-gray-400 w-6 h-6 cursor-pointer" onClick={() => navigate('/add-completed')} />
-          <BarChart2 className="text-gray-400 w-6 h-6 cursor-pointer" onClick={() => navigate('/history')} />
-          <User className="text-gray-400 w-6 h-6 cursor-pointer" onClick={() => navigate('/profile')} />
+          <NavbarIcon icon={Home} path="/" label="Home" />
+          <NavbarIcon icon={PlusCircle} path="/add-completed" label="Add Session" />
+          <NavbarIcon icon={BarChart2} path="/history" label="History" />
+          <NavbarIcon icon={User} path="/profile" label="Profile" />
         </footer>
       )}
     </div>

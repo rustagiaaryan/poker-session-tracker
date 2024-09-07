@@ -107,4 +107,13 @@ export const getFilteredSessions = async (filters) => {
   }
 };
 
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    const response = await api.post('/users/change-password', { currentPassword, newPassword });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while changing password';
+  }
+};
+
 export default api;
