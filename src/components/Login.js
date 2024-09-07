@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/api';
 
 const Login = ({ onLogin }) => {
@@ -13,8 +13,8 @@ const Login = ({ onLogin }) => {
     try {
       const data = await login(email, password);
       localStorage.setItem('token', data.token);
-      onLogin(); // Call the onLogin function passed from App.js
-      navigate('/'); // Navigate to home page after successful login
+      onLogin();
+      navigate('/');
     } catch (error) {
       setError(error.toString());
     }
@@ -61,13 +61,21 @@ const Login = ({ onLogin }) => {
           >
             Sign In
           </button>
-          <button
-            className="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800"
-            onClick={() => navigate('/register')}
-            type="button"
-          >
-            Register
-          </button>
+          <div className="flex flex-col items-end">
+            <button
+              className="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800"
+              onClick={() => navigate('/register')}
+              type="button"
+            >
+              Register
+            </button>
+            <Link
+              to="/forgot-password"
+              className="inline-block align-baseline font-bold text-sm text-purple-500 hover:text-purple-800 mt-2"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
       </form>
     </div>

@@ -5,6 +5,8 @@ import { Settings, Award, Home, PlusCircle, BarChart2, User, LogOut } from 'luci
 import { getSessions, createSession, updateSession } from './services/api';
 import Login from './components/Login';
 import Register from './components/Register';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import HomePage from './components/HomePage';
 import SessionHistory from './components/SessionHistory';
 import ActiveSession from './components/ActiveSession';
@@ -56,7 +58,7 @@ const App = () => {
       setSessions(sessions.map(session => 
         session._id === sessionId ? updatedSession : session
       ));
-      await fetchSessions(); // Refetch sessions to ensure we have the latest data
+      await fetchSessions();
     } catch (error) {
       console.error('Failed to update session', error);
       throw error;
@@ -89,6 +91,8 @@ const App = () => {
         <Routes>
           <Route path="/login" element={!isAuthenticated ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
           <Route path="/register" element={!isAuthenticated ? <Register onRegister={handleLogin} /> : <Navigate to="/" />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={isAuthenticated ? <HomePage startLiveSession={handleStartLiveSession} /> : <Navigate to="/login" />} />
           <Route path="/history" element={isAuthenticated ? <SessionHistory sessions={sessions.filter(s => !s.isActive)} onUpdateSession={handleUpdateSession} fetchSessions={fetchSessions} /> : <Navigate to="/login" />} />
           <Route path="/active-session" element={isAuthenticated ? <ActiveSession onUpdateSession={handleUpdateSession} /> : <Navigate to="/login" />} />

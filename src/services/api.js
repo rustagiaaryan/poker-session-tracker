@@ -35,6 +35,24 @@ export const register = async (username, email, password) => {
   }
 };
 
+export const forgotPassword = async (email) => {
+  try {
+    const response = await api.post('/users/forgot-password', { email });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while sending reset password email';
+  }
+};
+
+export const resetPassword = async (token, password) => {
+  try {
+    const response = await api.post(`/users/reset-password/${token}`, { password });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while resetting password';
+  }
+};
+
 export const getSessions = async (endpoint = '') => {
   try {
     const response = await api.get(`/sessions${endpoint}`);
