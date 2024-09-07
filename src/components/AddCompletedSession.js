@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, GamepadIcon, DollarSign, Monitor, Trophy, Clock, Calendar } from 'lucide-react';
+import { ChevronLeft, Plus, GamepadIcon, DollarSign, Monitor, Trophy, Clock, Calendar, Tag } from 'lucide-react';
 import { createSession } from '../services/api';
 
 const AddCompletedSession = ({ onSessionAdded }) => {
@@ -14,7 +14,9 @@ const AddCompletedSession = ({ onSessionAdded }) => {
     sessionType: 'Cash',
     notes: '',
     startTime: new Date().toISOString().slice(0, 16),
-    duration: ''
+    duration: '',
+    tip: '',
+    sessionName: ''
   });
 
   const [showCustomGameType, setShowCustomGameType] = useState(false);
@@ -46,7 +48,8 @@ const AddCompletedSession = ({ onSessionAdded }) => {
         isActive: false,
         buyIn: parseFloat(sessionData.buyIn),
         cashOut: parseFloat(sessionData.cashOut),
-        duration: parseInt(sessionData.duration)
+        duration: parseInt(sessionData.duration),
+        tip: parseFloat(sessionData.tip) || 0
       };
   
       await createSession(newSession);
@@ -70,6 +73,21 @@ const AddCompletedSession = ({ onSessionAdded }) => {
 
       <div className="space-y-4">
         <div className="flex justify-between items-center bg-gray-800 p-3 rounded">
+          <span>Session Name</span>
+          <div className="flex items-center">
+            <Tag className="text-gray-400 mr-2" />
+            <input
+              type="text"
+              name="sessionName"
+              value={sessionData.sessionName}
+              onChange={handleChange}
+              className="w-48 p-2 bg-gray-700 text-white rounded"
+              placeholder="Enter session name"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center bg-gray-800 p-3 rounded">
           <span>Buy-In</span>
           <div className="flex items-center">
             <DollarSign className="text-gray-400 mr-2" />
@@ -91,6 +109,20 @@ const AddCompletedSession = ({ onSessionAdded }) => {
               type="number"
               name="cashOut"
               value={sessionData.cashOut}
+              onChange={handleChange}
+              className="w-24 p-2 bg-gray-700 text-white rounded text-right"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center bg-gray-800 p-3 rounded">
+          <span>Tip</span>
+          <div className="flex items-center">
+            <DollarSign className="text-gray-400 mr-2" />
+            <input
+              type="number"
+              name="tip"
+              value={sessionData.tip}
               onChange={handleChange}
               className="w-24 p-2 bg-gray-700 text-white rounded text-right"
             />

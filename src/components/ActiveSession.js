@@ -25,6 +25,8 @@ const ActiveSession = () => {
   const [showBuyInModal, setShowBuyInModal] = useState(false);
   const [newBuyInAmount, setNewBuyInAmount] = useState('');
   const [isEditingTime, setIsEditingTime] = useState(false);
+  const [tip, setTip] = useState('');
+  const [sessionName, setSessionName] = useState('');
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -57,6 +59,8 @@ const ActiveSession = () => {
       setSetting(fetchedSession.setting || 'In Person');
       setSessionType(fetchedSession.sessionType || 'Cash');
       setNotes(fetchedSession.notes || '');
+      setTip(fetchedSession.tip || '');
+      setSessionName(fetchedSession.sessionName || '');
       const startTime = new Date(fetchedSession.startTime);
       const now = new Date();
       setElapsedSeconds(Math.floor((now - startTime) / 1000));
@@ -76,7 +80,9 @@ const ActiveSession = () => {
         setting,
         sessionType,
         notes,
-        duration: elapsedSeconds
+        duration: elapsedSeconds,
+        tip,
+        sessionName
       };
       await updateSession(session._id, updatedSession);
     } catch (error) {
@@ -104,7 +110,9 @@ const ActiveSession = () => {
           sessionType,
           notes,
           isActive: false,
-          endTime: new Date().toISOString()
+          endTime: new Date().toISOString(),
+          tip,
+          sessionName
         };
         await updateSession(session._id, updatedSession);
         navigate('/history');
@@ -199,6 +207,19 @@ const ActiveSession = () => {
       </button>
 
       <div className="space-y-6 mb-8">
+        <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-lg font-semibold">Session Name</span>
+          </div>
+          <input
+            type="text"
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Enter session name"
+          />
+        </div>
+
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">Buy-In</span>
@@ -305,6 +326,21 @@ const ActiveSession = () => {
             <option>Tournament</option>
           </select>
         </div>
+
+        <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+          <div className="flex items-center mb-2">
+            <DollarSign className="text-purple-500 mr-2" />
+            <span className="text-lg font-semibold">Tip</span>
+          </div>
+          <input
+            type="number"
+            value={tip}
+            onChange={(e) => setTip(e.target.value)}
+            className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Enter tip amount"
+          />
+        </div>
+
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <div className="flex items-center mb-2">
             <FileText className="text-purple-500 mr-2" />
@@ -458,10 +494,19 @@ const ActiveSession = () => {
             </div>
             <input
               type="number"
-              className="w-full p-3 mb-6 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full p-3 mb-4 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={cashOut}
               onChange={(e) => setCashOut(e.target.value)}
               placeholder="Cash out amount"
+              step="0.01"
+              min="0"
+            />
+            <input
+              type="number"
+              className="w-full p-3 mb-6 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={tip}
+              onChange={(e) => setTip(e.target.value)}
+              placeholder="Tip amount"
               step="0.01"
               min="0"
             />

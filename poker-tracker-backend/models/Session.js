@@ -6,12 +6,20 @@ const SessionSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  sessionName: {
+    type: String,
+    default: ''
+  },
   buyIn: {
     type: Number,
     required: true
   },
   cashOut: {
     type: Number
+  },
+  tip: {
+    type: Number,
+    default: 0
   },
   startTime: {
     type: Date,

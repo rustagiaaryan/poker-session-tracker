@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isValid, parseISO, isWithinInterval, endOfDay } from 'date-fns';
-import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy } from 'lucide-react';
+import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Tag } from 'lucide-react';
 import SessionDetailsModal from './SessionDetailsModal';
 import { deleteSession } from '../services/api';
 
@@ -21,7 +21,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     stakes: '',
     sessionType: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    sessionName: ''
   });
   const [appliedFilters, setAppliedFilters] = useState({
     profitMin: '',
@@ -31,7 +32,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     stakes: '',
     sessionType: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    sessionName: ''
   });
   const [currentSortBy, setCurrentSortBy] = useState('startTime');
   const [currentSortOrder, setCurrentSortOrder] = useState('desc');
@@ -40,15 +42,16 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   const [filteredSessions, setFilteredSessions] = useState(sessions);
   const [customGameType, setCustomGameType] = useState('');
   const [customStakes, setCustomStakes] = useState('');
+  const [subtractTipsFromProfit, setSubtractTipsFromProfit] = useState(false);
 
   useEffect(() => {
     updateGraphData(filteredSessions);
     calculateOverallProfit(filteredSessions);
-  }, [filteredSessions]);
+  }, [filteredSessions, subtractTipsFromProfit]);
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [sessions, appliedFilters, appliedSortBy, appliedSortOrder]);
+  }, [sessions, appliedFilters, appliedSortBy, appliedSortOrder, subtractTipsFromProfit]);
 
   const updateGraphData = (sessionData) => {
     let cumulativeProfit = 0;
@@ -56,7 +59,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       .filter(session => isValid(parseISO(session.startTime)))
       .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
       .map(session => {
-        const profit = session.cashOut - session.buyIn;
+        const profit = subtractTipsFromProfit
+          ? session.cashOut - session.buyIn - (session.tip || 0)
+          : session.cashOut - session.buyIn;
         cumulativeProfit += profit;
         return {
           date: parseISO(session.startTime),
@@ -67,7 +72,12 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const calculateOverallProfit = (sessionData) => {
-    const totalProfit = sessionData.reduce((sum, session) => sum + (session.cashOut - session.buyIn), 0);
+    const totalProfit = sessionData.reduce((sum, session) => {
+      const sessionProfit = subtractTipsFromProfit
+        ? session.cashOut - session.buyIn - (session.tip || 0)
+        : session.cashOut - session.buyIn;
+      return sum + sessionProfit;
+    }, 0);
     setOverallProfit(totalProfit);
   };
 
@@ -100,7 +110,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const calculateProfitPerHour = (session) => {
-    const profit = session.cashOut - session.buyIn;
+    const profit = subtractTipsFromProfit
+      ? session.cashOut - session.buyIn - (session.tip || 0)
+      : session.cashOut - session.buyIn;
     const hours = session.duration / 60;
     return hours > 0 ? (profit / hours).toFixed(2) : '0.00';
   };
@@ -132,10 +144,20 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     let filtered = [...sessions];
 
     if (appliedFilters.profitMin !== '') {
-      filtered = filtered.filter(session => (session.cashOut - session.buyIn) >= parseFloat(appliedFilters.profitMin));
+      filtered = filtered.filter(session => {
+        const profit = subtractTipsFromProfit
+          ? session.cashOut - session.buyIn - (session.tip || 0)
+          : session.cashOut - session.buyIn;
+        return profit >= parseFloat(appliedFilters.profitMin);
+      });
     }
     if (appliedFilters.profitMax !== '') {
-      filtered = filtered.filter(session => (session.cashOut - session.buyIn) <= parseFloat(appliedFilters.profitMax));
+      filtered = filtered.filter(session => {
+        const profit = subtractTipsFromProfit
+          ? session.cashOut - session.buyIn - (session.tip || 0)
+          : session.cashOut - session.buyIn;
+        return profit <= parseFloat(appliedFilters.profitMax);
+      });
     }
     if (appliedFilters.setting !== '') {
       filtered = filtered.filter(session => session.setting === appliedFilters.setting);
@@ -164,20 +186,29 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
         isWithinInterval(parseISO(session.startTime), { start, end })
       );
     }
+    if (appliedFilters.sessionName !== '') {
+      filtered = filtered.filter(session => 
+        session.sessionName && session.sessionName.toLowerCase().includes(appliedFilters.sessionName.toLowerCase())
+      );
+    }
 
     filtered.sort((a, b) => {
       if (appliedSortBy === 'date') {
         return appliedSortOrder === 'asc' ? new Date(a.startTime) - new Date(b.startTime) : new Date(b.startTime) - new Date(a.startTime);
       } else if (appliedSortBy === 'profit') {
-        const profitA = a.cashOut - a.buyIn;
-        const profitB = b.cashOut - b.buyIn;
+        const profitA = subtractTipsFromProfit ? a.cashOut - a.buyIn - (a.tip || 0) : a.cashOut - a.buyIn;
+        const profitB = subtractTipsFromProfit ? b.cashOut - b.buyIn - (b.tip || 0) : b.cashOut - b.buyIn;
         return appliedSortOrder === 'asc' ? profitA - profitB : profitB - profitA;
       } else if (appliedSortBy === 'duration') {
         return appliedSortOrder === 'asc' ? a.duration - b.duration : b.duration - a.duration;
       } else if (appliedSortBy === 'profitPerHour') {
-        const profitPerHourA = a.duration > 0 ? ((a.cashOut - a.buyIn) / a.duration) * 60 : 0;
-        const profitPerHourB = b.duration > 0 ? ((b.cashOut - b.buyIn) / b.duration) * 60 : 0;
+        const profitPerHourA = calculateProfitPerHour(a);
+        const profitPerHourB = calculateProfitPerHour(b);
         return appliedSortOrder === 'asc' ? profitPerHourA - profitPerHourB : profitPerHourB - profitPerHourA;
+      } else if (appliedSortBy === 'tips') {
+        const tipA = a.tip || 0;
+        const tipB = b.tip || 0;
+        return appliedSortOrder === 'asc' ? tipA - tipB : tipB - tipA;
       }
       return 0;
     });
@@ -205,7 +236,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       stakes: '',
       sessionType: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      sessionName: ''
     };
     setCurrentFilters(emptyFilters);
     setAppliedFilters(emptyFilters);
@@ -215,6 +247,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     setAppliedSortOrder('desc');
     setCustomGameType('');
     setCustomStakes('');
+    setSubtractTipsFromProfit(false);
   };
 
   const gameTypeOptions = ['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'];
@@ -358,6 +391,17 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <option value="Tournament">Tournament</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Session Name</label>
+                <input
+                  type="text"
+                  name="sessionName"
+                  value={currentFilters.sessionName}
+                  onChange={handleFilterChange}
+                  placeholder="Search by session name"
+                  className="w-full p-2 bg-gray-700 text-white rounded"
+                />
+              </div>
             </div>
             <div className="flex justify-between items-end">
               <div>
@@ -372,6 +416,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                     <option value="profit">Profit</option>
                     <option value="duration">Duration</option>
                     <option value="profitPerHour">Profit/Hour</option>
+                    <option value="tips">Tips</option>
                   </select>
                   <select
                     value={currentSortOrder}
@@ -383,7 +428,16 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   </select>
                 </div>
               </div>
-              <div>
+              <div className="flex items-center">
+                <label className="flex items-center text-sm font-medium text-gray-400 mr-4">
+                  <input
+                    type="checkbox"
+                    checked={subtractTipsFromProfit}
+                    onChange={() => setSubtractTipsFromProfit(!subtractTipsFromProfit)}
+                    className="mr-2"
+                  />
+                  Subtract Tips from Profit
+                </label>
                 <button
                   onClick={handleApplyFilters}
                   className="bg-purple-500 text-white px-4 py-2 rounded mr-2"
@@ -434,6 +488,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
           >
             <div className="flex justify-between items-center mb-2">
               <span className="text-lg font-semibold">
+                {session.sessionName || 'Unnamed Session'}
+              </span>
+              <span className="text-sm text-gray-400">
                 {isValid(parseISO(session.startTime)) 
                   ? format(parseISO(session.startTime), 'MMM dd, yyyy')
                   : 'Invalid Date'}
@@ -445,12 +502,12 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   <DollarSign size={16} className="mr-1" />
                   <span>Profit</span>
                 </div>
-                <span className={`text-xl font-bold ${(session.cashOut - session.buyIn) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  ${(session.cashOut - session.buyIn).toFixed(2)}
+                <span className={`text-xl font-bold ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)).toFixed(2)}
                 </span>
               </div>
               <div>
-                <div className="flex items-center text-gray-400 mb-1">
+              <div className="flex items-center text-gray-400 mb-1">
                   <Clock size={16} className="mr-1" />
                   <span>Duration</span>
                 </div>
@@ -476,6 +533,10 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
               <p>
                 <Trophy size={14} className="inline mr-1" />
                 Type: {session.sessionType}
+              </p>
+              <p>
+                <DollarSign size={14} className="inline mr-1" />
+                Tip: ${session.tip || 0}
               </p>
             </div>
           </div>
