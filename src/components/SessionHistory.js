@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, isValid, parseISO, isWithinInterval, endOfDay } from 'date-fns';
-import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor, Trophy, Tag } from 'lucide-react';
+import { Filter, ChevronLeft, DollarSign, Clock, TrendingUp, GamepadIcon, Monitor } from 'lucide-react';
 import SessionDetailsModal from './SessionDetailsModal';
 import { deleteSession } from '../services/api';
 
@@ -434,9 +434,9 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                     type="checkbox"
                     checked={subtractTipsFromProfit}
                     onChange={() => setSubtractTipsFromProfit(!subtractTipsFromProfit)}
-                    className="mr-2"
+                    className="mr-2 form-checkbox h-5 w-5 text-purple-600"
                   />
-                  Subtract Tips from Profit
+                  <span>Subtract Tips from Profit</span>
                 </label>
                 <button
                   onClick={handleApplyFilters}
@@ -479,69 +479,71 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {filteredSessions.map((session) => (
-          <div 
-            key={session._id} 
-            className="bg-gray-800 rounded-lg p-4 cursor-pointer transform transition duration-200 hover:scale-1 hover:shadow-lg hover:bg-gray-700"
-            onClick={() => setSelectedSession(session)}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-semibold">
-                {session.sessionName || 'Unnamed Session'}
-              </span>
-              <span className="text-sm text-gray-400">
-                {isValid(parseISO(session.startTime)) 
-                  ? format(parseISO(session.startTime), 'MMM dd, yyyy')
-                  : 'Invalid Date'}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="flex items-center text-gray-400 mb-1">
-                  <DollarSign size={16} className="mr-1" />
-                  <span>Profit</span>
-                </div>
-                <span className={`text-xl font-bold ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)).toFixed(2)}
+      {filteredSessions.length === 0 ? (
+        <div className="text-center text-gray-400 mt-8">
+          <p>No sessions found. Your sessions will appear here with a graph once you add them.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredSessions.map((session) => (
+            <div 
+              key={session._id} 
+              className="bg-gray-800 rounded-lg p-4 cursor-pointer transform transition duration-200 hover:scale-1 hover:shadow-lg hover:bg-gray-700"
+              onClick={() => setSelectedSession(session)}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-lg font-semibold">
+                  {session.sessionName ? `${session.sessionName} - ` : ''}
+                  {isValid(parseISO(session.startTime)) 
+                    ? format(parseISO(session.startTime), 'MMM dd, yyyy')
+                    : 'Invalid Date'}
                 </span>
               </div>
-              <div>
-              <div className="flex items-center text-gray-400 mb-1">
-                  <Clock size={16} className="mr-1" />
-                  <span>Duration</span>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="flex items-center text-gray-400 mb-1">
+                    <DollarSign size={16} className="mr-1" />
+                    <span>Profit</span>
+                  </div>
+                  <span className={`text-xl font-bold ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)).toFixed(2)}
+                  </span>
                 </div>
-                <span className="text-xl font-bold">{formatDuration(session.duration)}</span>
+                <div>
+                  <div className="flex items-center text-gray-400 mb-1">
+                    <Clock size={16} className="mr-1" />
+                    <span>Duration</span>
+                  </div>
+                  <span className="text-xl font-bold">{formatDuration(session.duration)}</span>
+                </div>
+                <div>
+                  <div className="flex items-center text-gray-400 mb-1">
+                    <TrendingUp size={16} className="mr-1" />
+                    <span>Profit/Hour</span>
+                  </div>
+                  <span className="text-xl font-bold">${calculateProfitPerHour(session)}</span>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center text-gray-400 mb-1">
-                  <TrendingUp size={16} className="mr-1" />
-                  <span>Profit/Hour</span>
-                </div>
-                <span className="text-xl font-bold">${calculateProfitPerHour(session)}</span>
+              <div className="mt-2 text-sm text-gray-400">
+                <p>
+                  <GamepadIcon size={14} className="inline mr-1" />
+                  Game: {session.gameType} - Stakes: {session.stakes}
+                </p>
+                <p>
+                  <Monitor size={14} className="inline mr-1" />
+                  Setting: {session.setting}
+                </p>
+                {session.tip > 0 && (
+                  <p>
+                    <DollarSign size={14} className="inline mr-1" />
+                    Tip: ${session.tip.toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="mt-2 text-sm text-gray-400">
-              <p>
-                <GamepadIcon size={14} className="inline mr-1" />
-                Game: {session.gameType} - Stakes: {session.stakes}
-              </p>
-              <p>
-                <Monitor size={14} className="inline mr-1" />
-                Setting: {session.setting}
-              </p>
-              <p>
-                <Trophy size={14} className="inline mr-1" />
-                Type: {session.sessionType}
-              </p>
-              <p>
-                <DollarSign size={14} className="inline mr-1" />
-                Tip: ${session.tip || 0}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {selectedSession && (
         <SessionDetailsModal

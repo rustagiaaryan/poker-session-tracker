@@ -116,4 +116,13 @@ export const changePassword = async (currentPassword, newPassword) => {
   }
 };
 
+export const deleteAccount = async () => {
+  try {
+    const response = await api.delete('/users/delete-account');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while deleting the account';
+  }
+};
+
 export default api;

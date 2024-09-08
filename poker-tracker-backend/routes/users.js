@@ -7,7 +7,6 @@ const User = require('../models/User');
 const sgMail = require('@sendgrid/mail');
 const auth = require('../middleware/auth');
 
-
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // @route   POST api/users/register
@@ -187,5 +186,31 @@ router.post('/change-password', auth, async (req, res) => {
   }
 });
 
+// @route   DELETE api/users/delete-account
+// @desc    Delete user account
+// @access  Private
+// @route   DELETE api/users/delete-account
+// @desc    Delete user account
+// @access  Private
+router.delete('/delete-account', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(req.user.id);
+
+    // Optionally, you might want to delete all sessions or other data associated with this user
+    // For example, if you have a Session model:
+    // await Session.deleteMany({ user: req.user.id });
+
+    res.json({ msg: 'User account has been deleted' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
 
 module.exports = router;
