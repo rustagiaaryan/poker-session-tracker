@@ -53,7 +53,7 @@ const ActiveSession = () => {
     try {
       const fetchedSession = await getSession(sessionId);
       setSession(fetchedSession);
-      setBuyIns(fetchedSession.buyIns || [{ amount: fetchedSession.buyIn, count: 1 }]);
+      setBuyIns(fetchedSession.buyIns || [{ amount: fetchedSession.buyIn }]);
       setGameType(fetchedSession.gameType || 'No Limit Hold\'em');
       setStakes(fetchedSession.stakes || '1/2');
       setSetting(fetchedSession.setting || 'In Person');
@@ -72,8 +72,10 @@ const ActiveSession = () => {
 
   const handleUpdateSession = async () => {
     try {
+      const totalBuyIn = buyIns.reduce((sum, buyIn) => sum + Number(buyIn.amount), 0);
       const updatedSession = {
         ...session,
+        buyIn: totalBuyIn,
         buyIns: buyIns,
         gameType: gameType === 'Custom' ? customGameType : gameType,
         stakes: stakes === 'Custom' ? customStakes : stakes,
@@ -99,8 +101,10 @@ const ActiveSession = () => {
   const handleFinishSession = async () => {
     if (cashOut !== '' && !isNaN(Number(cashOut))) {
       try {
+        const totalBuyIn = buyIns.reduce((sum, buyIn) => sum + Number(buyIn.amount), 0);
         const updatedSession = {
           ...session,
+          buyIn: totalBuyIn,
           buyIns: buyIns,
           cashOut: cashOut,
           duration: Math.ceil(editableDuration / 60), // Convert seconds to minutes, rounding up
@@ -146,11 +150,13 @@ const ActiveSession = () => {
 
   const submitNewBuyIn = () => {
     if (newBuyInAmount && !isNaN(newBuyInAmount)) {
-      setBuyIns([...buyIns, { amount: parseFloat(newBuyInAmount), count: 1 }]);
+      setBuyIns([...buyIns, { amount: parseFloat(newBuyInAmount) }]);
       setNewBuyInAmount('');
       setShowBuyInModal(false);
     }
   };
+
+  const totalBuyIn = buyIns.reduce((sum, buyIn) => sum + Number(buyIn.amount), 0);
 
   return (
     <div className="flex flex-col h-full bg-gray-900 text-white p-4 w-full max-w-6xl mx-auto">
@@ -196,16 +202,16 @@ const ActiveSession = () => {
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">Buy-In</span>
             <div className="flex items-center">
-              <span className="mr-2 text-xl font-bold">${buyIns.reduce((sum, bi) => sum + bi.amount, 0).toFixed(2)}</span>
+              <span className="mr-2 text-xl font-bold">${totalBuyIn.toFixed(2)}</span>
               <span className="bg-purple-500 text-white px-2 py-1 rounded-lg mr-2">{buyIns.length}</span>
               <Plus className="text-purple-500 cursor-pointer hover:text-purple-400 transition duration-300" onClick={handleAddBuyIn} />
             </div>
           </div>
-          {buyIns.length > 1 && (
+          {buyIns.length > 0 && (
             <div className="mt-2">
               {buyIns.map((buyIn, index) => (
                 <div key={index} className="text-sm text-gray-400">
-                  Buy-in {index + 1}: ${buyIn.amount.toFixed(2)}
+                  Buy-in {index + 1}: ${Number(buyIn.amount).toFixed(2)}
                 </div>
               ))}
             </div>
