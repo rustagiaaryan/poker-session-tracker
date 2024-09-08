@@ -39,14 +39,14 @@ const ActiveSession = () => {
   }, [location.state, navigate]);
 
   useEffect(() => {
-    let interval;
     if (isRunning && session) {
-      interval = setInterval(() => {
-        setElapsedSeconds((prevSeconds) => prevSeconds + 1);
+      intervalRef.current = setInterval(() => {
+        setElapsedSeconds(prevSeconds => prevSeconds + 1);
       }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
     }
-    intervalRef.current = interval;
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalRef.current);
   }, [isRunning, session]);
 
   const fetchSession = async (sessionId) => {
@@ -80,7 +80,7 @@ const ActiveSession = () => {
         setting,
         sessionType,
         notes,
-        duration: elapsedSeconds,
+        duration: Math.ceil(elapsedSeconds / 60), // Convert seconds to minutes, rounding up
         tip,
         sessionName
       };
@@ -92,7 +92,7 @@ const ActiveSession = () => {
 
   const handleFinishClick = () => {
     setShowFinishModal(true);
-    clearInterval(intervalRef.current);
+    setIsRunning(false);
     setEditableDuration(elapsedSeconds);
   };
 
@@ -103,7 +103,7 @@ const ActiveSession = () => {
           ...session,
           buyIns: buyIns,
           cashOut: cashOut,
-          duration: editableDuration,
+          duration: Math.ceil(editableDuration / 60), // Convert seconds to minutes, rounding up
           gameType: gameType === 'Custom' ? customGameType : gameType,
           stakes: stakes === 'Custom' ? customStakes : stakes,
           setting,
@@ -311,8 +311,8 @@ const ActiveSession = () => {
             className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Enter tip amount"
           />
-        </div> 
-        
+        </div>
+
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <div className="flex items-center mb-2">
             <FileText className="text-purple-500 mr-2" />
@@ -421,7 +421,7 @@ const ActiveSession = () => {
         </div>
       )}
 
-      {showFinishModal && (
+{showFinishModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md relative">
             <button 
@@ -449,6 +449,7 @@ const ActiveSession = () => {
                     value={Math.floor(editableDuration / 3600)}
                     onChange={(e) => setEditableDuration(e.target.value * 3600 + (editableDuration % 3600))}
                     className="w-16 p-2 bg-gray-700 text-white rounded mr-1"
+                    min="0"
                   />
                   :
                   <input
@@ -456,6 +457,8 @@ const ActiveSession = () => {
                     value={Math.floor((editableDuration % 3600) / 60)}
                     onChange={(e) => setEditableDuration(Math.floor(editableDuration / 3600) * 3600 + e.target.value * 60 + (editableDuration % 60))}
                     className="w-16 p-2 bg-gray-700 text-white rounded mx-1"
+                    min="0"
+                    max="59"
                   />
                   :
                   <input
@@ -463,6 +466,8 @@ const ActiveSession = () => {
                     value={editableDuration % 60}
                     onChange={(e) => setEditableDuration(Math.floor(editableDuration / 60) * 60 + Number(e.target.value))}
                     className="w-16 p-2 bg-gray-700 text-white rounded ml-1"
+                    min="0"
+                    max="59"
                   />
                 </div>
               )}
