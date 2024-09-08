@@ -73,12 +73,12 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
       {isEditing ? editComponent : <p className="text-white text-lg">{value}</p>}
     </div>
   );
-
+  
   const renderBuyIns = () => {
     const totalBuyIn = Array.isArray(editedSession.buyIns) 
       ? editedSession.buyIns.reduce((sum, buyIn) => sum + buyIn.amount, 0)
       : Number(editedSession.buyIn);
-
+  
     return (
       <div>
         {Array.isArray(editedSession.buyIns) && editedSession.buyIns.length > 0 ? (
@@ -98,12 +98,12 @@ const SessionDetailsModal = ({ session, onClose, onUpdate, onDelete }) => {
       </div>
     );
   };
-
+  
   const profit = Number(editedSession.cashOut) - (
     Array.isArray(editedSession.buyIns)
       ? editedSession.buyIns.reduce((sum, buyIn) => sum + buyIn.amount, 0)
       : Number(editedSession.buyIn)
-  ) - Number(editedSession.tip);
+  );
   const profitColor = profit >= 0 ? 'text-green-500' : 'text-red-500';
 
   const gameTypeOptions = ['No Limit Hold\'em', 'Pot Limit Hold\'em', 'Omaha', 'DBBP Omaha', 'Custom'];

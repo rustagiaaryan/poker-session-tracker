@@ -157,35 +157,7 @@ const ActiveSession = () => {
       <div className="flex justify-between items-center mb-6">
         <ChevronLeft className="text-purple-500 cursor-pointer" onClick={() => navigate('/')} />
         <div className="text-3xl font-bold text-purple-500">
-          {isEditingTime ? (
-            <div className="flex items-center">
-              <input
-                type="number"
-                value={Math.floor(editableDuration / 3600)}
-                onChange={(e) => setEditableDuration(e.target.value * 3600 + (editableDuration % 3600))}
-                className="w-16 p-2 bg-gray-800 text-white rounded mr-1"
-              />
-              :
-              <input
-                type="number"
-                value={Math.floor((editableDuration % 3600) / 60)}
-                onChange={(e) => setEditableDuration(Math.floor(editableDuration / 3600) * 3600 + e.target.value * 60 + (editableDuration % 60))}
-                className="w-16 p-2 bg-gray-800 text-white rounded mx-1"
-              />
-              :
-              <input
-                type="number"
-                value={editableDuration % 60}
-                onChange={(e) => setEditableDuration(Math.floor(editableDuration / 60) * 60 + Number(e.target.value))}
-                className="w-16 p-2 bg-gray-800 text-white rounded ml-1"
-              />
-            </div>
-          ) : (
-            formatTime(elapsedSeconds)
-          )}
-          <button onClick={() => setIsEditingTime(!isEditingTime)} className="ml-2 text-purple-500">
-            <Edit size={18} />
-          </button>
+          {formatTime(elapsedSeconds)}
         </div>
         <button 
           className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition duration-300"
@@ -339,8 +311,8 @@ const ActiveSession = () => {
             className="w-full bg-gray-700 p-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Enter tip amount"
           />
-        </div>
-
+        </div> 
+        
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <div className="flex items-center mb-2">
             <FileText className="text-purple-500 mr-2" />
@@ -453,7 +425,10 @@ const ActiveSession = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md relative">
             <button 
-              onClick={() => setShowFinishModal(false)} 
+              onClick={() => {
+                setShowFinishModal(false);
+                setIsRunning(true);
+              }} 
               className="absolute top-2 right-2 text-gray-400 hover:text-white"
             >
               <X size={24} />
@@ -494,19 +469,10 @@ const ActiveSession = () => {
             </div>
             <input
               type="number"
-              className="w-full p-3 mb-4 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full p-3 mb-6 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={cashOut}
               onChange={(e) => setCashOut(e.target.value)}
               placeholder="Cash out amount"
-              step="0.01"
-              min="0"
-            />
-            <input
-              type="number"
-              className="w-full p-3 mb-6 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              value={tip}
-              onChange={(e) => setTip(e.target.value)}
-              placeholder="Tip amount"
               step="0.01"
               min="0"
             />

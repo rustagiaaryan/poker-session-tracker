@@ -142,6 +142,8 @@ const AddCompletedSession = ({ onSessionAdded }) => {
               handleChange(e);
               if (e.target.value === 'Custom') {
                 setShowCustomGameType(true);
+              } else {
+                setShowCustomGameType(false);
               }
             }}
           >
@@ -149,8 +151,18 @@ const AddCompletedSession = ({ onSessionAdded }) => {
             <option>Pot Limit Hold'em</option>
             <option>Omaha</option>
             <option>DBBP Omaha</option>
+            {customGameType && <option value={customGameType}>{customGameType}</option>}
             <option value="Custom">Custom</option>
           </select>
+          {showCustomGameType && (
+            <input
+              type="text"
+              value={customGameType}
+              onChange={(e) => setCustomGameType(e.target.value)}
+              className="w-full p-2 bg-gray-700 text-white rounded mt-2"
+              placeholder="Enter custom game type"
+            />
+          )}
         </div>
 
         <div className="bg-gray-800 p-3 rounded">
@@ -166,6 +178,8 @@ const AddCompletedSession = ({ onSessionAdded }) => {
               handleChange(e);
               if (e.target.value === 'Custom') {
                 setShowCustomStakes(true);
+              } else {
+                setShowCustomStakes(false);
               }
             }}
           >
@@ -178,8 +192,41 @@ const AddCompletedSession = ({ onSessionAdded }) => {
             <option>10/20</option>
             <option>25/50</option>
             <option>100/200</option>
+            {customStakes.sb && customStakes.bb && <option value={`${customStakes.sb}/${customStakes.bb}`}>{`${customStakes.sb}/${customStakes.bb}`}</option>}
             <option value="Custom">Custom</option>
           </select>
+          {showCustomStakes && (
+            <div className="mt-2 space-y-2">
+              <input
+                type="text"
+                value={customStakes.sb}
+                onChange={(e) => setCustomStakes({...customStakes, sb: e.target.value})}
+                className="w-full p-2 bg-gray-700 text-white rounded"
+                placeholder="Small Blind"
+              />
+              <input
+                type="text"
+                value={customStakes.bb}
+                onChange={(e) => setCustomStakes({...customStakes, bb: e.target.value})}
+                className="w-full p-2 bg-gray-700 text-white rounded"
+                placeholder="Big Blind"
+              />
+              <input
+                type="text"
+                value={customStakes.ante}
+                onChange={(e) => setCustomStakes({...customStakes, ante: e.target.value})}
+                className="w-full p-2 bg-gray-700 text-white rounded"
+                placeholder="Ante (optional)"
+              />
+              <input
+                type="text"
+                value={customStakes.straddle}
+                onChange={(e) => setCustomStakes({...customStakes, straddle: e.target.value})}
+                className="w-full p-2 bg-gray-700 text-white rounded"
+                placeholder="Straddle (optional)"
+              />
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-800 p-3 rounded">
@@ -264,91 +311,6 @@ const AddCompletedSession = ({ onSessionAdded }) => {
         <Plus className="mr-2" />
         {isSubmitting ? 'Adding Session...' : 'Add Completed Session'}
       </button>
-
-      {showCustomGameType && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 p-4 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4 text-purple-500">Custom Game Type</h3>
-            <input
-              type="text"
-              className="w-full p-2 mb-4 bg-gray-700 text-white rounded"
-              value={customGameType}
-              onChange={(e) => setCustomGameType(e.target.value)}
-              placeholder="Enter custom game type"
-            />
-            <div className="flex justify-end">
-              <button
-                className="px-4 py-2 bg-gray-600 text-white rounded mr-2"
-                onClick={() => setShowCustomGameType(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-purple-500 text-white rounded"
-                onClick={() => {
-                  setSessionData({...sessionData, gameType: customGameType});
-                  setShowCustomGameType(false);
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCustomStakes && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 p-4 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4 text-purple-500">Custom Stakes</h3>
-            <input
-              type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded"
-              value={customStakes.sb}
-              onChange={(e) => setCustomStakes({...customStakes, sb: e.target.value})}
-              placeholder="Small Blind"
-            />
-            <input
-              type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded"
-              value={customStakes.bb}
-              onChange={(e) => setCustomStakes({...customStakes, bb: e.target.value})}
-              placeholder="Big Blind"
-            />
-            <input
-              type="text"
-              className="w-full p-2 mb-2 bg-gray-700 text-white rounded"
-              value={customStakes.ante}
-              onChange={(e) => setCustomStakes({...customStakes, ante: e.target.value})}
-              placeholder="Ante (optional)"
-            />
-            <input
-              type="text"
-              className="w-full p-2 mb-4 bg-gray-700 text-white rounded"
-              value={customStakes.straddle}
-              onChange={(e) => setCustomStakes({...customStakes, straddle: e.target.value})}
-              placeholder="Straddle (optional)"
-            />
-            <div className="flex justify-end">
-              <button
-                className="px-4 py-2 bg-gray-600 text-white rounded mr-2"
-                onClick={() => setShowCustomStakes(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-purple-500 text-white rounded"
-                onClick={() => {
-                  setSessionData({...sessionData, stakes: `${customStakes.sb}/${customStakes.bb}${customStakes.ante ? ` (Ante: ${customStakes.ante})` : ''}${customStakes.straddle ? ` (Straddle: ${customStakes.straddle})` : ''}`});
-                  setShowCustomStakes(false);
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

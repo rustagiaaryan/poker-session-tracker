@@ -1,7 +1,7 @@
 import './App.css';
 import React, { useState, useEffect } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, Award, Home, PlusCircle, BarChart2, User, LogOut } from 'lucide-react';
+import { LogOut, Home, PlusCircle, BarChart2, User } from 'lucide-react';
 import { getSessions, createSession, updateSession } from './services/api';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Login from './components/Login';
@@ -100,9 +100,7 @@ const App = () => {
   return (
     <GoogleOAuthProvider clientId="214253996238-t6mhj3nei468tdbismja00rnj0a0iiti.apps.googleusercontent.com">
       <div className="flex flex-col h-screen bg-gray-900 text-white">
-        <header className="flex justify-between items-center p-4">
-          <Settings className="text-gray-400 w-6 h-6" />
-          <Award className="text-purple-500 w-6 h-6" />
+        <header className="flex justify-end items-center p-4">
           {isAuthenticated && (
             <LogOut className="text-gray-400 w-6 h-6 cursor-pointer" onClick={handleLogout} />
           )}

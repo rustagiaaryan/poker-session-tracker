@@ -47,11 +47,11 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   useEffect(() => {
     updateGraphData(filteredSessions);
     calculateOverallProfit(filteredSessions);
-  }, [filteredSessions, subtractTipsFromProfit]);
+  }, [filteredSessions, appliedFilters.subtractTipsFromProfit]);
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [sessions, appliedFilters, appliedSortBy, appliedSortOrder, subtractTipsFromProfit]);
+  }, [sessions, appliedFilters, appliedSortBy, appliedSortOrder]);
 
   const updateGraphData = (sessionData) => {
     let cumulativeProfit = 0;
@@ -59,7 +59,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       .filter(session => isValid(parseISO(session.startTime)))
       .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
       .map(session => {
-        const profit = subtractTipsFromProfit
+        const profit = appliedFilters.subtractTipsFromProfit
           ? session.cashOut - session.buyIn - (session.tip || 0)
           : session.cashOut - session.buyIn;
         cumulativeProfit += profit;
@@ -73,7 +73,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
   const calculateOverallProfit = (sessionData) => {
     const totalProfit = sessionData.reduce((sum, session) => {
-      const sessionProfit = subtractTipsFromProfit
+      const sessionProfit = appliedFilters.subtractTipsFromProfit
         ? session.cashOut - session.buyIn - (session.tip || 0)
         : session.cashOut - session.buyIn;
       return sum + sessionProfit;
@@ -110,7 +110,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
   };
 
   const calculateProfitPerHour = (session) => {
-    const profit = subtractTipsFromProfit
+    const profit = appliedFilters.subtractTipsFromProfit
       ? session.cashOut - session.buyIn - (session.tip || 0)
       : session.cashOut - session.buyIn;
     const hours = session.duration / 60;
@@ -145,7 +145,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
 
     if (appliedFilters.profitMin !== '') {
       filtered = filtered.filter(session => {
-        const profit = subtractTipsFromProfit
+        const profit = appliedFilters.subtractTipsFromProfit
           ? session.cashOut - session.buyIn - (session.tip || 0)
           : session.cashOut - session.buyIn;
         return profit >= parseFloat(appliedFilters.profitMin);
@@ -153,7 +153,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     }
     if (appliedFilters.profitMax !== '') {
       filtered = filtered.filter(session => {
-        const profit = subtractTipsFromProfit
+        const profit = appliedFilters.subtractTipsFromProfit
           ? session.cashOut - session.buyIn - (session.tip || 0)
           : session.cashOut - session.buyIn;
         return profit <= parseFloat(appliedFilters.profitMax);
@@ -182,7 +182,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
     if (appliedFilters.startDate && appliedFilters.endDate) {
       const start = parseISO(appliedFilters.startDate);
       const end = endOfDay(parseISO(appliedFilters.endDate));
-      filtered = filtered.filter(session => 
+      filtered = filtered.filter(session=> 
         isWithinInterval(parseISO(session.startTime), { start, end })
       );
     }
@@ -196,8 +196,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       if (appliedSortBy === 'date') {
         return appliedSortOrder === 'asc' ? new Date(a.startTime) - new Date(b.startTime) : new Date(b.startTime) - new Date(a.startTime);
       } else if (appliedSortBy === 'profit') {
-        const profitA = subtractTipsFromProfit ? a.cashOut - a.buyIn - (a.tip || 0) : a.cashOut - a.buyIn;
-        const profitB = subtractTipsFromProfit ? b.cashOut - b.buyIn - (b.tip || 0) : b.cashOut - b.buyIn;
+        const profitA = appliedFilters.subtractTipsFromProfit ? a.cashOut - a.buyIn - (a.tip || 0) : a.cashOut - a.buyIn;
+        const profitB = appliedFilters.subtractTipsFromProfit ? b.cashOut - b.buyIn - (b.tip || 0) : b.cashOut - b.buyIn;
         return appliedSortOrder === 'asc' ? profitA - profitB : profitB - profitA;
       } else if (appliedSortBy === 'duration') {
         return appliedSortOrder === 'asc' ? a.duration - b.duration : b.duration - a.duration;
@@ -221,6 +221,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       ...currentFilters,
       gameType: currentFilters.gameType === 'Custom' ? customGameType : currentFilters.gameType,
       stakes: currentFilters.stakes === 'Custom' ? customStakes : currentFilters.stakes,
+      subtractTipsFromProfit: subtractTipsFromProfit,
     });
     setAppliedSortBy(currentSortBy);
     setAppliedSortOrder(currentSortOrder);
@@ -237,7 +238,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
       sessionType: '',
       startDate: '',
       endDate: '',
-      sessionName: ''
+      sessionName: '',
+      subtractTipsFromProfit: false,
     };
     setCurrentFilters(emptyFilters);
     setAppliedFilters(emptyFilters);
@@ -403,7 +405,7 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                 />
               </div>
             </div>
-            <div className="flex justify-between items-end">
+            <div className="flex justify-between items-center mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
                 <div className="flex space-x-2">
@@ -428,29 +430,35 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                   </select>
                 </div>
               </div>
-              <div className="flex items-center">
-                <label className="flex items-center text-sm font-medium text-gray-400 mr-4">
-                  <input
-                    type="checkbox"
-                    checked={subtractTipsFromProfit}
-                    onChange={() => setSubtractTipsFromProfit(!subtractTipsFromProfit)}
-                    className="mr-2 form-checkbox h-5 w-5 text-purple-600"
-                  />
-                  <span>Subtract Tips from Profit</span>
-                </label>
-                <button
-                  onClick={handleApplyFilters}
-                  className="bg-purple-500 text-white px-4 py-2 rounded mr-2"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="bg-gray-600 text-white px-4 py-2 rounded"
-                >
-                  Clear
-                </button>
-              </div>
+              <div className="flex items-center space-x-4">
+  <label className="flex items-center cursor-pointer">
+    <div className="relative">
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={subtractTipsFromProfit}
+        onChange={() => setSubtractTipsFromProfit(!subtractTipsFromProfit)}
+      />
+      <div className={`block w-14 h-8 rounded-full ${subtractTipsFromProfit ? 'bg-purple-500' : 'bg-gray-600'}`}></div>
+      <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition transform ${subtractTipsFromProfit ? 'translate-x-6' : ''}`}></div>
+    </div>
+    <span className="ml-3 text-gray-300">Subtract Tips from Profit</span>
+  </label>
+</div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleApplyFilters}
+                className="bg-purple-500 text-white px-4 py-2 rounded mr-2"
+              >
+                Apply
+              </button>
+              <button
+                onClick={clearFilters}
+                className="bg-gray-600 text-white px-4 py-2 rounded"
+              >
+                Clear
+              </button>
             </div>
           </div>
         )}
@@ -505,8 +513,8 @@ const SessionHistory = ({ sessions, onUpdateSession, fetchSessions }) => {
                     <DollarSign size={16} className="mr-1" />
                     <span>Profit</span>
                   </div>
-                  <span className={`text-xl font-bold ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    ${(session.cashOut - session.buyIn - (subtractTipsFromProfit ? (session.tip || 0) : 0)).toFixed(2)}
+                  <span className={`text-xl font-bold ${(session.cashOut - session.buyIn - (appliedFilters.subtractTipsFromProfit ? (session.tip || 0) : 0)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    ${(session.cashOut - session.buyIn - (appliedFilters.subtractTipsFromProfit ? (session.tip || 0) : 0)).toFixed(2)}
                   </span>
                 </div>
                 <div>
