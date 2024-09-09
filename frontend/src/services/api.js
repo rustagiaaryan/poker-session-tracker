@@ -125,4 +125,13 @@ export const deleteAccount = async () => {
   }
 };
 
+export const importSessions = async (googleSheetsUrl) => {
+  try {
+    const response = await api.post('/sessions/import', { googleSheetsUrl });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.msg || 'An error occurred while importing sessions';
+  }
+};
+
 export default api;

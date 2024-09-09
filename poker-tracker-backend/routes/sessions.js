@@ -3,6 +3,8 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Session = require('../models/Session');
 const mongoose = require('mongoose');
+const { google } = require('googleapis');
+const path = require('path');
 
 // Get all sessions for a user
 router.get('/', auth, async (req, res) => {
@@ -188,5 +190,91 @@ router.get('/filter', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+router.post('/import', auth, async (req, res) => {
+  try {
+    const { googleSheetsUrl } = req.body;
+
+    // Extract the sheet ID from the URL
+    const sheetId = googleSheetsUrl.match(/[-\w]{25,}/);
+    if (!sheetId) {
+      return res.status(400).json({ msg: 'Invalid Google Sheets URL' });
+    }
+
+    // Set up Google Sheets API
+    const auth = new google.auth.GoogleAuth({
+      keyFile: path.resolve(__dirname, '..', process.env.GOOGLE_APPLICATION_CREDENTIALS),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Fetch the data from the sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId[0],
+      range: 'Sheet1', // Adjust this if your sheet has a different name
+    });
+
+    const rows = response.data.values;
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({ msg: 'No data found in the sheet' });
+    }
+
+    // Assume the first row contains headers
+    const headers = rows[0];
+    const sessions = rows.slice(1).map(row => {
+      let session = { user: req.user.id };
+      headers.forEach((header, index) => {
+        if (row[index]) {
+          switch(header.toLowerCase()) {
+            case 'sessionname':
+              session.sessionName = row[index];
+              break;
+            case 'buyin':
+              session.buyIn = parseFloat(row[index]);
+              break;
+            case 'cashout':
+              session.cashOut = parseFloat(row[index]);
+              break;
+            case 'tip':
+              session.tip = parseFloat(row[index]);
+              break;
+            case 'gametype':
+              session.gameType = row[index];
+              break;
+            case 'stakes':
+              session.stakes = row[index];
+              break;
+            case 'setting':
+              session.setting = row[index];
+              break;
+            case 'sessiontype':
+              session.sessionType = row[index];
+              break;
+            case 'starttime':
+            case 'date':
+              session.startTime = new Date(row[index]);
+              break;
+            case 'duration':
+              session.duration = parseInt(row[index]);
+              break;
+            case 'notes':
+              session.notes = row[index];
+              break;
+          }
+        }
+      });
+      session.isActive = false;
+      return session;
+    });
+    // Insert the sessions into the database
+    await Session.insertMany(sessions);
+
+    res.json({ msg: `Successfully imported ${sessions.length} sessions` });
+  } catch (error) {
+    console.error('Error importing sessions:', error);
+    res.status(500).json({ msg: 'Server error while importing sessions' });
+  }
+});
+
 
 module.exports = router;

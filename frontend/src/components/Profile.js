@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { changePassword, deleteAccount } from '../services/api';
+import { changePassword, deleteAccount, importSessions } from '../services/api';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -10,6 +10,8 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
+  const [importMessage, setImportMessage] = useState('');
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -37,6 +39,17 @@ const Profile = () => {
       navigate('/login');
     } catch (error) {
       setError('Failed to delete account. Please try again.');
+    }
+  };
+
+  const handleImportSessions = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await importSessions(googleSheetsUrl);
+      setImportMessage(response.msg);
+      setGoogleSheetsUrl('');
+    } catch (error) {
+      setImportMessage(`Failed to import sessions: ${error.toString()}`);
     }
   };
 
@@ -93,6 +106,33 @@ const Profile = () => {
               type="submit"
             >
               Change Password
+            </button>
+          </div>
+        </form>
+      </div>
+      <div className="bg-gray-800 shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 className="text-2xl mb-4">Import Sessions from Google Sheets</h2>
+        {importMessage && <p className="text-green-500 mb-4">{importMessage}</p>}
+        <form onSubmit={handleImportSessions}>
+          <div className="mb-4">
+            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="google-sheets-url">
+              Google Sheets URL
+            </label>
+            <input
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="google-sheets-url"
+              type="url"
+              value={googleSheetsUrl}
+              onChange={(e) => setGoogleSheetsUrl(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <button
+              className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              type="submit"
+            >
+              Import Sessions
             </button>
           </div>
         </form>

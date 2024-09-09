@@ -29,7 +29,7 @@ const ResetPassword = () => {
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="text-5xl font-bold text-purple-500 mb-8 text-center">FLOP</h1>
+      <h1 className="text-5xl font-bold text-purple-500 mb-8 text-center">Poker Session Tracker</h1>
       <form onSubmit={handleSubmit} className="bg-gray-800 shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <h2 className="text-2xl mb-4 text-center">Reset Password</h2>
         {message && <p className="text-green-500 mb-4 text-center">{message}</p>}

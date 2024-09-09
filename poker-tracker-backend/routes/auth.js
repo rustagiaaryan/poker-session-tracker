@@ -12,10 +12,10 @@ router.get('/google',
 );
 
 router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: 'https://poker-tracker-frontend.onrender.com/login' }),
   (req, res) => {
     const token = jwt.sign({ user: { id: req.user.id } }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.redirect(`http://localhost:3000/auth/google/success?token=${token}`);
+    res.redirect(`https://poker-tracker-frontend.onrender.com/auth/google/success?token=${token}`);
   }
 );
 

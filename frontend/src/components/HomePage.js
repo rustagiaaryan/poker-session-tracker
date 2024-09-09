@@ -44,7 +44,7 @@ const HomePage = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <h1 className="text-5xl font-bold text-purple-500 mb-8 text-center">FLOP</h1>
+      <h1 className="text-5xl font-bold text-purple-500 mb-8 text-center">Poker Session Tracker</h1>
       
       <div className="bg-gray-800 rounded-lg p-6 mb-8">
         <h2 className="text-2xl mb-4 text-center">Start a Session</h2>

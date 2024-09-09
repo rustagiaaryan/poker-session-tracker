@@ -1,6 +1,7 @@
 # Dependencies
 /node_modules
 /server/node_modules
+/frontend/node_modules
 
 # Production build
 /build
@@ -12,6 +13,7 @@
 .env.test.local
 .env.production.local
 poker-tracker-backend/.env
+frontend/.env
 
 npm-debug.log*
 yarn-debug.log*

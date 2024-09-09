@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Session = require('../models/Session');
 const sgMail = require('@sendgrid/mail');
 const auth = require('../middleware/auth');
 
@@ -113,16 +114,26 @@ router.post('/forgot-password', async (req, res) => {
 
     const msg = {
       to: user.email,
-      from: process.env.FROM_EMAIL,
-      subject: 'Password Reset Link',
+      from: 'rustagiaaryan@gmail.com', // Update this to match your SendGrid verified sender
+      subject: 'Password Reset for Poker Session Tracker',
       text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
         Please click on the following link, or paste this into your browser to complete the process:\n\n
         ${resetUrl}\n\n
-        If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+        This link will expire in 1 hour.\n\n
+        If you did not request this, please ignore this email and your password will remain unchanged.\n\n
+        Note: If you don't see this email in your inbox, please check your spam folder. The email is sent from rustagiaaryan@gmail.com.`,
+      html: `<p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
+        <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+        <p><strong>Note: If you don't see this email in your inbox, please check your spam folder. The email is sent from rustagiaaryan@gmail.com.</strong></p>`,
     };
 
     await sgMail.send(msg);
-    res.status(200).json({ msg: 'Password reset email sent' });
+    res.status(200).json({ 
+      msg: 'Password reset email sent. Please check your inbox and spam folder. The email is sent from rustagiaaryan@gmail.com.'
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
@@ -189,9 +200,6 @@ router.post('/change-password', auth, async (req, res) => {
 // @route   DELETE api/users/delete-account
 // @desc    Delete user account
 // @access  Private
-// @route   DELETE api/users/delete-account
-// @desc    Delete user account
-// @access  Private
 router.delete('/delete-account', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -199,14 +207,13 @@ router.delete('/delete-account', auth, async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
+    // Delete all sessions associated with this user
+    await Session.deleteMany({ user: req.user.id });
+
     // Delete the user
-    await User.findByIdAndDelete(req.user.id);
+    await user.remove();
 
-    // Optionally, you might want to delete all sessions or other data associated with this user
-    // For example, if you have a Session model:
-    // await Session.deleteMany({ user: req.user.id });
-
-    res.json({ msg: 'User account has been deleted' });
+    res.json({ msg: 'User account and all associated sessions have been deleted' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

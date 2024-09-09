@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Session = require('./Session');
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -19,6 +20,15 @@ const UserSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  }
+});
+
+UserSchema.pre('remove', async function(next) {
+  try {
+    await Session.deleteMany({ user: this._id });
+    next();
+  } catch (error) {
+    next(error);
   }
 });
 
